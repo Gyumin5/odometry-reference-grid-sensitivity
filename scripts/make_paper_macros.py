@@ -201,14 +201,28 @@ def per_sequence_macros(rows):
 
 
 def segment_rule_population_macros(rows, register):
-    """100~800 m 규칙이 등록 시퀀스의 일부에서만 서는 릴리스들.
+    """각 구간 규칙이 등록 시퀀스의 일부에서만 서는 릴리스들.
 
     상한 표는 그 규칙이 실제로 선 시퀀스만 센다. 등록 수를 모르면 그 수가
     릴리스 전체의 성질처럼 읽히는데, 한 시퀀스에서만 선 값과 열한 개를
     모은 값은 같은 줄에 적혀도 같은 종류가 아니다.
+
+    두 규칙을 한 줄에 같이 센다. 긴 규칙만 세면 짧은 규칙은 읽은 것
+    전부에서 선다는 말이 되는데, 1 m 규칙도 공통 창 안에서 누적 이동이
+    1 m 를 못 넘는 시퀀스를 떨군다(뉴신 909/979, 튬 알지비디 74/221).
+    규칙마다 목록을 따로 내지 않는 것은 자리 때문이다 — 릴리스 이름이
+    두 번 적히면 표 설명이 한 줄 늘고 그만큼 본문을 덜어내야 한다.
     """
     reg = {r["release"]: int(r["sequences"]) for r in register
            if r.get("sequences")}
+
+    def have(rel, rule):
+        # 구간이 하나도 안 서는 릴리스도 이 목록에 든다. 그 규칙의 줄이
+        # 있는 것만 돌면 0 개인 릴리스는 들어올 길이 없어서, "일부에서만
+        # 선다" 는 목록이 "전혀 안 선다" 는 쪽을 조용히 빠뜨린다.
+        hit = [r for r in rows if r["release"] == rel and r["rule"] == rule]
+        return int(hit[0]["n_sequences"]) if hit else 0
+
     short = []
     for rel in NAMES:
         if not any(r["release"] == rel for r in rows):
@@ -216,17 +230,14 @@ def segment_rule_population_macros(rows, register):
         total = reg.get(rel)
         if total is None:
             continue
-        # 구간이 하나도 안 서는 릴리스도 이 목록에 든다. seg 줄이 있는 것만
-        # 돌면 0 개인 릴리스는 들어올 길이 없어서, "일부에서만 선다" 는
-        # 목록이 "전혀 안 선다" 는 쪽을 조용히 빠뜨린다.
-        seg = [r for r in rows if r["release"] == rel and r["rule"] == "seg"]
-        have = int(seg[0]["n_sequences"]) if seg else 0
-        if have < total:
-            short.append("%s %d of %d" % (LABELS[rel], have, total))
+        coarse, fine = have(rel, "seg"), have(rel, "rpe1m")
+        if coarse < total or fine < total:
+            short.append("%s %d/%d of %d"
+                         % (LABELS[rel], coarse, fine, total))
     if not short:
         return []
-    return [("SegRuleShortList", ", ".join(short)),
-            ("SegRuleShortCount", str(len(short)))]
+    return [("RuleShortList", ", ".join(short)),
+            ("RuleShortCount", str(len(short)))]
 
 
 def sweep_population_macros(rows):
@@ -275,7 +286,7 @@ def release_count_macros(rows):
             ("NIndoor", word(hand)), ("NVehicle", word(len(rel) - hand))]
 
 
-def wheeled_indoor_macros(seq_rows):
+def wheeled_indoor_macros(load_rows):
     """실내 릴리스 안에 섞인 바퀴 시퀀스 수.
 
     튬 알지비디는 릴리스 전체를 손에 들고 찍은 것으로 적으면 틀린다 —
@@ -283,11 +294,12 @@ def wheeled_indoor_macros(seq_rows):
     집합에도 들어 있다. 본문이 플랫폼을 가르는 자리에서 그 수를 글자로
     박으면 등록부가 바뀌어도 문장이 안 따라온다.
 
-    세는 단위는 창이 아니라 원래 시퀀스다. 공통 창 규칙이 한 시퀀스를
-    여럿으로 쪼개 "#숫자" 를 붙이므로 그 꼬리를 떼고 센다.
+    세는 단위는 토막이 아니라 공개 시퀀스다. 적재 표는 파일 하나에 줄
+    하나라 그 단위가 바로 공개 시퀀스다. 채점 표에서 세면 단위가 토막이고
+    모집단도 1 m 구간이 선 토막으로 좁아져서, 파이어니어 시퀀스 하나가
+    구간을 못 세우면 본문의 "공개된 시퀀스" 가 조용히 줄어든다.
     """
-    base = {r["sequence"].split("#")[0] for r in seq_rows
-            if "pioneer" in r["sequence"]}
+    base = {r["sequence"] for r in load_rows if "pioneer" in r["sequence"]}
     return [("RegTumRgbdWheeled", word(len(base)))]
 
 
@@ -1532,13 +1544,6 @@ def gap_policy_macros(rows):
                     moved.append(abs(y - x) / x * 100.0)
         if moved:
             out.append(("GapRpeDShiftMax", at_most(max(moved), "%.3g")))
-        # 적재가 끊어 만든 토막인데도 공백이 다시 잡히는 자리. 끊을 때는
-        # 시퀀스 전체의 중앙 간격을 쓰고 여기서는 토막 자신의 중앙 간격을
-        # 쓰기 때문에, 끊고 나면 공백이 없다고 말할 수 없다. 토막은 이름에
-        # 번호가 붙어 있어 그것으로 가린다.
-        out.append(("GapLoadResidualPieces",
-                    str(sum(1 for r in fine if "#" in r["sequence"]
-                            and int(r["segments_crossing"])))))
 
     coarse = [r for r in rows if r["rule"] == "seg"]
     if coarse:
@@ -1686,6 +1691,27 @@ def gap_cause_macros(score, gaps):
     return [("GapSegDomSubSecRelease", LABELS[rel]),
             ("GapSegDomSubSecPct", "%.3g" % (share * 100.0)),
             ("GapSegDomSubSecGapSec", at_most(worst_gap[rel], "%.3g"))]
+
+
+def gap_load_residual_macros(load_rows, audit_rows):
+    """적재가 끊어 만든 토막인데도 공백이 다시 잡히는 자리.
+
+    끊을 때는 시퀀스 전체의 중앙 간격을 쓰고 감사는 토막 자신의 중앙 간격을
+    쓰기 때문에, 끊고 나면 공백이 없다고 말할 수 없다.
+
+    세는 모집단은 적재가 남긴 토막 전부다. 채점 표에서 세면 두 가지로
+    어긋난다 — 1 m 구간이 안 선 토막이 아예 안 보이고, 끊긴 파일의 첫
+    토막은 이름에 번호가 안 붙어서(kitti_segment_D.py 의 "%s#%d" 는 k 가
+    0 이면 안 붙는다) 이름으로 토막을 가리면 통째로 빠진다. 조건도 다르다 —
+    본문이 말하는 것은 토막이 공백을 품는가이고 채점 표의 칸은 1 m 구간이
+    공백을 건너뛰는가다.
+    """
+    cut = {r["release"] for r in load_rows}
+    if not cut or not audit_rows:
+        return []
+    return [("GapLoadResidualPieces",
+             str(sum(1 for r in audit_rows if r["release"] in cut
+                     and int(r["gaps"]) > 0)))]
 
 
 def gap_load_macros(rows):
@@ -2052,8 +2078,6 @@ def main():
                     default="results/next/dataset_register.csv")
     ap.add_argument("--rule-ratio",
                     default="results/next/rule_ratio_common.csv")
-    ap.add_argument("--tumrgbd-seq",
-                    default="results/next/tumrgbd_rpe1m_D.csv")
     ap.add_argument("--crosscheck",
                     default="results/next/kitti_official_crosscheck.csv")
     ap.add_argument("--out-dir", default="paper_tim")
@@ -2095,7 +2119,7 @@ def main():
                      (args.gap_score, gap_policy_macros),
                      (args.gap_load, gap_load_macros),
                      (args.rule_ratio, rule_ratio_common_macros),
-                     (args.tumrgbd_seq, wheeled_indoor_macros),
+                     (args.gap_load, wheeled_indoor_macros),
                      (args.crosscheck, crosscheck_macros),
                      (args.boundary, official_boundary_macros)):
         if os.path.exists(path):
@@ -2104,6 +2128,9 @@ def main():
     if os.path.exists(args.gap_score) and os.path.exists(args.gaps):
         all_macros += gap_cause_macros(read_table(args.gap_score),
                                        read_table(args.gaps))
+    if os.path.exists(args.gap_load) and os.path.exists(args.gaps):
+        all_macros += gap_load_residual_macros(read_table(args.gap_load),
+                                               read_table(args.gaps))
     if os.path.exists(args.register):
         all_macros += register_count_macros(read_table(args.register))
         all_macros += rate_group_macros(
