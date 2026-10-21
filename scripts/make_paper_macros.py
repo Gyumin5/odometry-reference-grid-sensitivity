@@ -939,6 +939,19 @@ def method_scale_macros(rows):
            ("MoveEpsMax", at_most(eps[-1], "%.2g")),
            ("MoveSegmentsKeptCount", str(len(
                [r for r in rows if r["segments_kept"] == "1"])))]
+    # 구간 선택은 기준 경로만 보고 돌아가므로 추정의 드리프트와 무관하다.
+    # 칸 수(시퀀스 x 드리프트 x 어긋남)로 세면 같은 선택이 드리프트 수만큼
+    # 거듭 세어져 독립 사례가 부풀려진다. 조건은 (시퀀스, 어긋남) 이다.
+    sel = {}
+    for r in rows:
+        sel.setdefault((r["sequence"], r["offset_ms"]), set()).add(
+            r["segments_kept"])
+    mixed = sorted(k for k, v in sel.items() if len(v) > 1)
+    if mixed:
+        sys.exit("구간 선택이 드리프트에 따라 갈린 조건이 있다: %s" % (mixed,))
+    out += [("MoveSelectionConditions", str(len(sel))),
+            ("MoveSelectionKeptConditions", str(len(
+                [k for k, v in sel.items() if v == {"1"}])))]
     # 상한을 넘은 칸은 축을 가리지 않고 센다. 한 축만 세면 다른 축에서 깨진
     # 것이 0 으로 적힌다. 상한이 0 이라 비가 안 서는 칸은 빈 칸으로 오고,
     # 그 칸은 "넘었다" 로도 "안 넘었다" 로도 안 센다 — 센 칸 수를 따로 적어

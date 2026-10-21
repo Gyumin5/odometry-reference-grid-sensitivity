@@ -119,7 +119,7 @@ def main():
     # 한 단 폭(3.4 인치)에 두 칸을 세로로 쌓는다. 두 단을 가로지르는 그림은
     # 그 자리에 다른 글이 못 와서 쪽을 더 먹는다.
     plt.rcParams.update({"font.size": 7.0})
-    fig, axes = plt.subplots(2, 1, figsize=(3.4, 1.65), sharex=True)
+    fig, axes = plt.subplots(2, 1, figsize=(3.4, 1.85), sharex=True)
     panel(axes[0], sweep, rule, "D_trans_pct", releases)
     # 두 칸 다 2D 를 그린다는 것은 설명문이 말한다. 이름에 다시 적으면
     # 칸이 낮아졌을 때 두 세로 이름이 서로 겹친다.
@@ -145,18 +145,20 @@ def main():
     mark(axes[1], res, ":", "numerical residue", above=False)
     # 잔여선은 그려진 선들보다 낮아서 칸의 바닥에 붙는다. 그 아래로 한 칸을
     # 더 열어야 이름이 테두리와 가로축 눈금 위에 얹히지 않는다.
-    axes[1].set_ylim(bottom=res / 3.0)
+    axes[1].set_ylim(bottom=res / 6.0)
 
     # 세로로 쌓으면 가로축이 하나라 위 칸의 이름은 지운다.
     axes[0].set_xlabel("")
-    # 이름표는 아래 칸의 왼쪽 위에 둔다. 위 칸은 선들이 왼쪽 아래에서
-    # 오른쪽 위로 가로질러서 빈 구석이 없다 — 거기 두면 글자가 선과 표식
-    # 위에 얹힌다. 아래 칸은 가장 높은 선조차 왼쪽에서 한참 낮게 시작해
-    # 왼쪽 위가 비어 있다. 세 줄로 접어 그 빈 자리 안에 들어가게 한다.
-    axes[1].legend(fontsize=5.8, loc="upper left", frameon=False,
-                   ncol=3, handlelength=1.3, columnspacing=0.8,
-                   labelspacing=0.2)
-    fig.tight_layout(pad=0.4)
+    # 이름표는 두 칸 밖, 그림 맨 위에 가로로 눕힌다. 칸 안에 두면 어느
+    # 구석에 두든 선 위에 얹힌다 — 아래 칸 왼쪽 위에 뒀던 것을 300 dpi 로
+    # 떠 보니 튬 브이아이와 유로크 선이 글자 뒤로 지나가고 있었다. 칸 위를
+    # 비우는 식으로 자리를 만들면 그만큼 자료가 눌리므로, 칸 밖으로 뺀다.
+    handles, labels = axes[1].get_legend_handles_labels()
+    fig.legend(handles, labels, fontsize=5.8, loc="upper center",
+               frameon=False, ncol=5, handlelength=1.3,
+               columnspacing=0.8, labelspacing=0.2,
+               bbox_to_anchor=(0.5, 1.0))
+    fig.tight_layout(pad=0.4, rect=(0.0, 0.0, 1.0, 0.88))
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     fig.savefig(args.out)
     print("%s -> %s" % (", ".join(LABELS[r] for r in releases), args.out))
