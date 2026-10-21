@@ -12,6 +12,7 @@
 
 import argparse
 import csv
+import json
 import math
 import os
 import re
@@ -531,6 +532,27 @@ def sweep_macros(rows):
             + offset_linearity_macros(rows, rule="seg",
                                       prefix="OffsetLinearSeg")
             + method_over_rate_macros(rows))
+
+
+def public_commit_macros(out_dir):
+    """공개 저장소의 어느 커밋을 가리키나. 본문이 주소만 적지 않게 한다.
+
+    분기 주소는 그 뒤의 커밋까지 가리켜서, 심사가 읽은 나무와 독자가 여는
+    나무가 달라진다(31 회차 권고 1). 커밋은 공개 나무를 밀 때 같이 고치는
+    파일 하나에 둔다 — 본문에 손으로 적으면 미루고 잊는다.
+    """
+    path = os.path.join(out_dir, "public_commit.txt")
+    if not os.path.exists(path):
+        return []
+    with open(path) as f:
+        return [("PublicCommit", f.read().strip())]
+
+
+def moving_threshold():
+    """키티-360 시간축 진단이 쌍을 고르는 이동량 문턱. 그 코드의 상수다."""
+    from kitti360_time_axis import MOVING_M
+
+    return float(MOVING_M)
 
 
 def sweep_ratio_macros():
@@ -1325,6 +1347,10 @@ def time_axis_macros(rows):
             # 부르는 매크로가 전부 깎는 함수를 거쳤다는 검사가 한 칸도 안 비운다.
             ("AxisStepRatioPairsMin",
              at_least(min(int(r["step_ratio_pairs"]) for r in have), "%.0f")),
+            # 두 진단이 고르는 이웃쌍의 문턱. 앞 구간의 이동량이 이 값을
+            # 엄격히 넘는 쌍만 센다 — 본문이 "프레임 사이" 로만 적으면 정지
+            # 구간까지 든 통계로 읽힌다. 상수에서 뽑아 글자로 안 들게 한다.
+            ("AxisMovingM", "%g" % moving_threshold()),
             ("AxisJitterGridMax", at_most(max(jg) * 100, "%.1f")),
             ("AxisJitterStampMin", at_least(min(js) * 100, "%.1f")),
             ("AxisSegTransDropMin", at_least((1 - max(seg)) * 100, "%.1f")),
@@ -1846,33 +1872,59 @@ def table_spread(rows):
     return lines
 
 
-def environment_macros():
-    """재현에 필요한 판본 (이름, 값) 들. 본문에 손으로 적지 않기 위해서다.
+ENV_STORE = "results/next/environment.json"
 
-    적는 것은 이 파일을 돌린 해석기의 판본이다. 다른 판본에서 돌린 수를
-    들고 이 매크로만 다시 내면 둘이 어긋나므로, 수와 판본은 같은 회차에
-    낸다.
-    """
+
+def live_environment():
+    """지금 이 해석기·컴파일러·기계의 판본."""
     import numpy
+    import platform
     import scipy
+    import subprocess
 
     # 공식 이진 대조는 개발도구를 g++ -O2 로 직접 빌드한다. 어느 판본으로
     # 어느 기계에서 빌드했는지가 그 비교의 조건이라 같이 적는다 — 부동소수
     # 결과는 컴파일러와 아키텍처에 묶인다(27 회차 권고).
-    import platform
-    import subprocess
     try:
         ver = subprocess.run(["g++", "-dumpfullversion"], check=True,
                              capture_output=True, text=True).stdout.strip()
     except (OSError, subprocess.CalledProcessError):
         ver = "미확인"
-    return [("EnvPython", ".".join(str(v) for v in sys.version_info[:3])),
-            ("EnvNumpy", numpy.__version__),
-            ("EnvScipy", scipy.__version__),
-            ("EnvGpp", ver),
+    return {"python": ".".join(str(v) for v in sys.version_info[:3]),
+            "numpy": numpy.__version__, "scipy": scipy.__version__,
+            "gpp": ver, "arch": platform.machine()}
+
+
+def environment_macros(store=ENV_STORE):
+    """재현에 필요한 판본 (이름, 값) 들. 본문에 손으로 적지 않기 위해서다.
+
+    본문이 적는 것은 그 수를 잰 환경이다. 그런데 이 파일은 조판할 때마다
+    돌 수 있어서, 기존 결과표를 다른 기계에서 다시 조판하면 수는 그대로인데
+    판본 줄만 조용히 바뀐다. 그래서 처음 낼 때 그 환경을 결과 폴더에 적어
+    두고 그 뒤로는 적어 둔 것을 쓴다 — 지금 환경이 다르면 경고만 하고
+    기록된 쪽을 쓴다(31 회차 권고 2).
+    """
+    live = live_environment()
+    if store and os.path.exists(store):
+        with open(store) as f:
+            use = json.load(f)
+        if use != live:
+            print("경고: 측정 당시 환경 기록을 쓴다 — 지금 환경과 다르다"
+                  " (%s)" % store)
+    else:
+        use = live
+        if store:
+            os.makedirs(os.path.dirname(store), exist_ok=True)
+            with open(store, "w") as f:
+                json.dump(live, f, ensure_ascii=False, indent=1,
+                          sort_keys=True)
+    return [("EnvPython", use["python"]),
+            ("EnvNumpy", use["numpy"]),
+            ("EnvScipy", use["scipy"]),
+            ("EnvGpp", use["gpp"]),
             # x86_64 의 밑줄은 본문에서 첨자로 읽혀 빌드가 멈춘다. 수가 아닌
             # 칸이라 tex_number 가 손대지 않으므로 여기서 걷어낸다.
-            ("EnvArch", platform.machine().replace("_", "\\_"))]
+            ("EnvArch", use["arch"].replace("_", "\\_"))]
 
 
 def retrieval_macros(rows):
@@ -2006,7 +2058,11 @@ def main():
             rows, read_table(args.register),
             read_table(args.sweep) if os.path.exists(args.sweep) else None)
     all_macros += sweep_ratio_macros()
-    all_macros += environment_macros()
+    all_macros += public_commit_macros(args.out_dir)
+    # 환경 기록은 그것이 설명하는 표들 옆에 둔다 — 다른 폴더에서 돌렸을 때
+    # 기록만 딴 데 생기면 그 회차의 판본이 어느 표의 것인지가 끊긴다.
+    all_macros += environment_macros(
+        os.path.join(os.path.dirname(args.sweep) or ".", "environment.json"))
 
     nums = os.path.join(args.out_dir, "numbers.tex")
     with open(nums, "w") as f:
