@@ -1842,9 +1842,24 @@ def environment_macros():
     """
     import numpy
     import scipy
+
+    # 공식 이진 대조는 개발도구를 g++ -O2 로 직접 빌드한다. 어느 판본으로
+    # 어느 기계에서 빌드했는지가 그 비교의 조건이라 같이 적는다 — 부동소수
+    # 결과는 컴파일러와 아키텍처에 묶인다(27 회차 권고).
+    import platform
+    import subprocess
+    try:
+        ver = subprocess.run(["g++", "-dumpfullversion"], check=True,
+                             capture_output=True, text=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        ver = "미확인"
     return [("EnvPython", ".".join(str(v) for v in sys.version_info[:3])),
             ("EnvNumpy", numpy.__version__),
-            ("EnvScipy", scipy.__version__)]
+            ("EnvScipy", scipy.__version__),
+            ("EnvGpp", ver),
+            # x86_64 의 밑줄은 본문에서 첨자로 읽혀 빌드가 멈춘다. 수가 아닌
+            # 칸이라 tex_number 가 손대지 않으므로 여기서 걷어낸다.
+            ("EnvArch", platform.machine().replace("_", "\\_"))]
 
 
 def retrieval_macros(rows):
