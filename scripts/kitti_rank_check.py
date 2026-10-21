@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""공식 순위표의 칸 차이를 2D 와 맞대 어느 비교가 인증되는지 센다.
+"""공식 순위표의 칸 차이를 2D 와 맞대 어느 비교가 조건을 채우는지 센다.
+
+충족은 인증이 아니다. 순위는 공개 안 된 시험 구간에서 매겨지는데 우리가 잰 D 는
+공개 구간의 것이라, 한쪽에서 잰 상한이 다른 쪽에서 매긴 순서를 인증하지 못한다.
+여기 적는 것은 공개 구간의 D 를 대입했을 때 충분조건이 서는 쌍의 수다.
 
 kitti_segment_D.py 가 잰 것은 상한의 크기다. 그 수가 쓸모 있으려면 사람들이
 실제로 겨루는 차이와 맞대 봐야 한다.
@@ -214,10 +218,14 @@ def exceeds(gap, limit):
 
 
 def verdicts(board, metric, limit):
-    """모든 두 항목 쌍에 대해 (등수a, 등수b, 이름a, 이름b, 차이, 인증되나).
+    """모든 두 항목 쌍에 대해 (등수a, 등수b, 이름a, 이름b, 차이, 조건 충족).
 
     쌍을 고르지 않는다. 인접한 두 등수만 보면 "1 등과 2 등은 못 가린다" 까지고,
     전수를 보면 "몇 등 떨어진 자리까지 못 가리나" 가 같이 나온다.
+
+    충족은 인증이 아니다. 순위표는 공개 안 된 시험 구간에서 매기는데 우리가
+    잰 D 는 공개 구간의 것이라, 그 D 를 대입해 조건이 선다는 말까지다 —
+    원고 제7절이 적은 그대로다(심사 26 회차 필수 7).
     """
     s = scores(board, metric)
     out = []
@@ -229,7 +237,7 @@ def verdicts(board, metric, limit):
 
 
 def first_certified_distance(recs):
-    """몇 등 차이부터 인증이 하나라도 생기나. 없으면 None."""
+    """몇 등 차이부터 조건을 채우는 쌍이 하나라도 생기나. 없으면 None."""
     best = None
     for ia, ib, _, _, _, ok in recs:
         if ok and (best is None or ib - ia < best):
@@ -252,7 +260,7 @@ def main():
         certifies = board["aggregation"] == "mean"
         if not certifies:
             print("묶는 꼴 미확인 — 판정을 내지 않는다. 아래 수는 평균 꼴이라고"
-                  " 가정했을 때의 것이고 인증 칸은 미확인으로 적는다.")
+                  " 가정했을 때의 것이고 충족 칸은 미확인으로 적는다.")
         for metric, label, decimals in board["columns"]:
             if not rounds_to_display(board, metric, decimals):
                 raise SystemExit("%s %s: 적어 둔 점수가 소수 %d 자리로 안 찍힌다"
@@ -273,7 +281,7 @@ def main():
                   % (lim, h, lim + h))
             print("  순위표가 퍼진 폭 = %.4g (2D 의 %.2f 배)"
                   % (span, span / lim))
-            word = "인증" if certifies else "조건 만족(인증 아님)"
+            word = "조건 충족" if certifies else "조건 충족(묶는 꼴 미확인)"
             print("  모든 쌍      %s %3d / %3d (%.1f%%)"
                   % (word, held, len(recs), 100.0 * held / len(recs)))
             print("  바로 옆 등수  %s %3d / %3d"
@@ -297,9 +305,13 @@ def main():
                     # 묶는 꼴이 확인된 순위표에서만 판정을 적는다. 미확인인
                     # 자리에 0 을 적으면 "못 가린다" 로, 1 을 적으면 "가린다"
                     # 로 읽히는데 둘 다 자료가 받쳐 주지 않는다.
+                    #
+                    # 이름이 condition_met 인 이유는 이게 인증이 아니기
+                    # 때문이다. 공개 구간에서 잰 D 를 대입해 충분조건이
+                    # 선다는 말이고, 순위는 공개 안 된 시험 구간에서 매긴다.
                     "aggregation": board["aggregation"],
-                    "certified": ("1" if ok else "0") if certifies
-                                 else "unconfirmed",
+                    "condition_met": ("1" if ok else "0") if certifies
+                                     else "unconfirmed",
                     "source": board["source"],
                 })
 

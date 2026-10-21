@@ -213,6 +213,28 @@ def test_the_verdicts_do_not_turn_on_a_binary_subtraction_residue():
                 assert (on_grid > thr) == ok, (key, metric, na, nb)
 
 
+def test_the_output_never_calls_a_satisfied_condition_a_certification():
+    """충족은 인증이 아니다 — 심사 26 회차 필수 7.
+
+    순위는 공개 안 된 시험 구간에서 매겨지고 우리가 잰 D 는 공개 구간의
+    것이다. 한쪽에서 잰 상한이 다른 쪽에서 매긴 순서를 인증하지 못한다는
+    것이 원고 제7절이고, 출력이 그와 다른 말을 쓰면 공개 저장소를 여는
+    사람이 더 센 주장을 읽는다. 출력 문구와 CSV 칸 이름 둘 다 묶는다.
+    """
+    import inspect
+
+    import kitti_rank_check as krc
+
+    src = inspect.getsource(krc.main)
+    # 화면에 찍는 판정 낱말에 "인증" 이 들어가면 안 된다. 설명문에서
+    # "인증이 아니다" 라고 쓰는 것은 문자열 밖이라 여기 안 걸린다.
+    for line in src.splitlines():
+        if "word =" in line:
+            assert "인증" not in line, line
+    assert '"condition_met"' in src
+    assert '"certified"' not in src
+
+
 def test_each_board_reads_its_own_measurement_file():
     # 상한은 그 릴리스에서 그 구간 규칙으로 잰 것이어야 한다. 키티의 묶음
     # 행을 키티-360 순위표에 들이대면 구간 길이가 100~800 m 대 1 m 로 달라

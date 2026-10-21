@@ -1,4 +1,4 @@
-board,metric,column,unit,protocols,protocol_worst,rank_a,method_a,rank_b,method_b,rank_distance,gap,twoD,display_term,threshold,aggregation,certified,source
+board,metric,column,unit,protocols,protocol_worst,rank_a,method_a,rank_b,method_b,rank_distance,gap,twoD,display_term,threshold,aggregation,condition_met,source
 kitti,translation,병진오차,%,phase_half|decim2|interp,phase_half,1,SOFT2,2,V-LOAM,1,0.010000000000000009,0.8950403515855077,0.01,0.9050403515855077,mean,0,"KITTI Visual Odometry / SLAM Evaluation 2012 공식 순위표 (cvlibs.net/datasets/kitti/eval_odometry.php), 2026-10-19 조회, 상위 30"
 kitti,translation,병진오차,%,phase_half|decim2|interp,phase_half,1,SOFT2,3,LOAM,2,0.020000000000000018,0.8950403515855077,0.01,0.9050403515855077,mean,0,"KITTI Visual Odometry / SLAM Evaluation 2012 공식 순위표 (cvlibs.net/datasets/kitti/eval_odometry.php), 2026-10-19 조회, 상위 30"
 kitti,translation,병진오차,%,phase_half|decim2|interp,phase_half,1,SOFT2,4,TVL-SLAM+,3,0.030000000000000027,0.8950403515855077,0.01,0.9050403515855077,mean,0,"KITTI Visual Odometry / SLAM Evaluation 2012 공식 순위표 (cvlibs.net/datasets/kitti/eval_odometry.php), 2026-10-19 조회, 상위 30"

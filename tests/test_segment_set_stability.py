@@ -83,6 +83,30 @@ def test_the_weight_pools_sequences_the_way_the_bound_table_does():
             assert mv == 0
 
 
+def test_a_segment_that_disappears_is_in_the_denominator_only():
+    """사라진 구간은 분모에만 남는다 — 본문이 그렇게 읽히게 적어야 한다.
+
+    심사 26 회차가 짚은 자리다. 누적하는 쪽은 분자를 live & (j0 != j1) 로,
+    분모를 w 전체로 쌓는다. 그래서 이 몫은 "구간 집합이 얼마나 바뀌었나" 가
+    아니라 "살아남은 구간 중 끝이 옮겨간 것의 가중치 몫" 이다. 구간 하나가
+    통째로 사라져도 끝이 옮겨간 것이 없으면 몫은 0 이다.
+    """
+    base = line(n=12)
+    short = line(n=8)          # 뒤가 잘려 마지막 구간이 못 선다
+    pairs = [(0, 3.0), (2, 3.0), (6, 4.0)]
+    j0, _ = endpoints(base, pairs)
+    j1, _ = endpoints(short, pairs)
+    w = np.asarray([1.0 / L for _i, L in pairs])
+
+    live = (j0 >= 0) & (j1 >= 0)
+    moved = live & (j0 != j1)
+
+    assert not live.all(), (list(j0), list(j1))   # 하나는 죽었다
+    assert not moved.any()                        # 산 것은 안 옮겨졌다
+    assert w[moved].sum() == 0.0                  # 분자
+    assert w.sum() > w[live].sum()                # 분모엔 죽은 것이 남아 있다
+
+
 def test_the_cumulative_distance_starts_at_zero_and_is_monotone():
     d = arc(line(step=2.0))
     assert d[0] == 0.0
