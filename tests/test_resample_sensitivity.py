@@ -92,16 +92,44 @@ def test_a_position_score_breaks_the_bound():
     assert slack < 0
 
 
-def test_realigning_each_pair_breaks_the_bound():
-    d, diff, slack = falsify("realigned")
-    assert diff > d
-    assert slack < 0
+def test_a_common_refit_cannot_break_the_bound():
+    """양쪽에 같은 정렬을 걸면 상한은 안 깨진다 — 심사 24 회차가 잡은 자리.
+
+    옛 "realigned" 가지는 변경 전을 정렬 없이 재고 변경 후를 0 으로 박아서,
+    재표집이 아예 없는 delta=0 에서도 위반 2 를 냈다. 반례가 아니라 잣대를
+    바꾼 것이었다. 제대로 재면 못 깨진다는 것을 여기서 고정한다 — 최소를
+    취하는 연산이 1 차 립시츠라 두 최소의 차가 D 를 못 넘는다.
+    """
+    from scipy.spatial.transform import Rotation
+
+    H = Rotation.random(4000, random_state=11).as_matrix()
+
+    def refit(a, q, w):
+        v = np.zeros(len(H))
+        for k in range(len(q)):
+            tgt = np.repeat(q[k][None], len(H), axis=0)
+            v += w[k] * geodesic(np.einsum("nab,bc->nac", H, a[k]), tgt)
+        return float(v.min())
+
+    rng = np.random.default_rng(3)
+    for _ in range(8):
+        m = int(rng.integers(2, 5))
+        q = Rotation.random(m, random_state=int(rng.integers(1000000))).as_matrix()
+        pert = Rotation.from_rotvec(
+            rng.normal(scale=0.15, size=(m, 3))).as_matrix()
+        qp = np.einsum("nab,nbc->nac", pert, q)
+        a = Rotation.random(m, random_state=int(rng.integers(1000000))).as_matrix()
+        w = rng.random(m)
+        w /= w.sum()
+        d = float(np.dot(w, geodesic(q, qp)))
+        # 훑기로 잡은 최소라 참값보다 조금 크다. 여유를 둔다.
+        assert abs(refit(a, qp, w) - refit(a, q, w)) <= d + 1e-9
 
 
-def test_exactly_three_counterexamples_exist():
-    """반례는 셋뿐이다 — 제곱·위치·정렬 재적합.
+def test_exactly_two_counterexamples_exist():
+    """반례는 둘뿐이다 — 제곱과 지렛대 위치.
 
-    본문이 이 셋을 이름으로 부르는지는 tests/test_paper_matches_code.py 가
+    본문이 이 둘을 이름으로 부르는지는 tests/test_paper_matches_code.py 가
     따로 본다. 원고는 공개 나무에 안 담기므로 그 대조를 여기 두면 이 파일이
     통째로 공개 나무에서 빠진다 — 상한의 적대 검사까지 같이 빠진다.
     """
@@ -110,7 +138,7 @@ def test_exactly_three_counterexamples_exist():
 
     src = inspect.getsource(falsify)
     kinds = set(re.findall(r'score_kind == "(\w+)"', src))
-    assert kinds == {"squared", "position", "realigned"}, kinds
+    assert kinds == {"squared", "position"}, kinds
 
 
 def test_a_longer_lever_arm_breaks_the_position_bound_further():

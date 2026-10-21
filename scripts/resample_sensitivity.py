@@ -20,9 +20,14 @@
 적용 범위는 좁다. 여기서 상한이 서는 것은 평균 각거리 점수뿐이다.
   - 제곱오차 점수에는 안 선다. 제곱은 거리의 함수라 삼각부등식이 그대로 안 넘어간다.
   - 위치오차에는 안 선다. 회전 이동량이 위치를 얼마나 미는지는 지렛대 길이에 달렸다.
-  - 변환마다 다시 정렬하는 점수에는 안 선다. A_ij 가 고정이 아니게 된다.
-아래 falsify() 가 이 셋을 반례로 직접 확인한다 — 안 서는 것을 안 선다고 보이기
+아래 falsify() 가 이 둘을 반례로 직접 확인한다 — 안 서는 것을 안 선다고 보이기
 위해서다.
+
+정렬을 다시 맞추는 점수는 이 목록에 없다. 기준마다 다시 맞춰도 궤적 전체에 거는
+강체 정렬은 상대자세에서 상쇄되고, 정렬을 훑어 최소를 취하는 점수도 최소 연산이
+1 차 립시츠라 D 를 못 넘는다. 가르는 기준은 "재적합이라 부르는가" 가 아니라
+"추정의 상대자세가 실제로 바뀌는가" 다. 척도를 품은 정렬과 구간 재선택이
+그쪽이다.
 
 python3 scripts/resample_sensitivity.py 로 돌리면 적대적 조건을 훑어
 results/next/resample_bound_check.csv 에 위반 여부를 적는다.
@@ -181,11 +186,18 @@ def check_once(traj, est, gridkind, method, n, fs, seed, use_random_weights):
 
 
 def falsify(score_kind, delta=0.01, arm_m=10.0):
-    """상한이 안 서는 쪽 셋. 여기서는 위반이 나오는 게 정상이다.
+    """상한이 안 서는 쪽 둘. 여기서는 위반이 나오는 게 정상이다.
 
     난수 궤적으로는 이걸 못 보인다 — 쌍이 수백 개면 부호가 엇갈려 상쇄되고,
     안 서는 점수도 우연히 서 버린다. 그래서 쌍 하나로 직접 만든다.
     기준 Q = I, 재표집된 기준 Q' = z 축 delta 회전이라 D = delta 다.
+
+    셋째 갈래였던 "정렬 재적합" 은 뺐다. 심사 24 회차가 잡았는데, 그 가지는
+    변경 전은 정렬 안 한 점수로 재고 변경 후는 0 으로 박아 서로 다른 잣대를
+    비교하고 있었다 — delta=0 이라 재표집이 아예 없어도 "위반" 2 가 나왔다.
+    제대로 양쪽에 같은 정렬을 걸면 상한은 안 깨진다. 최소를 취하는 연산이
+    1 차 립시츠라 두 최소의 차가 피최소량의 최대 변화, 곧 D 를 못 넘는다.
+    test_a_common_refit_cannot_break_the_bound 가 그걸 수치로 고정한다.
     """
     q = np.eye(3)[None]
     qp = Rotation.from_rotvec([0, 0, delta]).as_matrix()[None]
@@ -206,12 +218,6 @@ def falsify(score_kind, delta=0.01, arm_m=10.0):
             np.einsum("nab,b->na", a, arm) - np.einsum("nab,b->na", q, arm), axis=1)))
         ep = float(np.dot(w, np.linalg.norm(
             np.einsum("nab,b->na", a, arm) - np.einsum("nab,b->na", qp, arm), axis=1)))
-    elif score_kind == "realigned":
-        # 변환마다 다시 정렬하면 A 가 고정이 아니다. 재표집된 쪽에만 정렬이
-        # 걸리면 점수가 통째로 0 으로 내려가고 그 낙차는 D 와 무관하다.
-        a = Rotation.from_rotvec([0, 0, 2.0]).as_matrix()[None]
-        e = float(np.dot(w, geodesic(a, q)))
-        ep = 0.0
     else:
         raise ValueError("모르는 점수: %s" % score_kind)
     return d, abs(ep - e), d - abs(ep - e)
@@ -273,7 +279,7 @@ def main():
         print("  위반 %s/%s/%s/%s" % (r["trajectory"], r["estimate"],
                                       r["grid"], r["method"]))
     print()
-    for kind in ("squared", "position", "realigned"):
+    for kind in ("squared", "position"):
         d, diff, slack = falsify(kind)
         print("범위 밖 %-10s D=%.4g  |E'-E|=%.4g  %s"
               % (kind, d, diff, "상한 안 섬" if slack < 0 else "이 조건에선 우연히 섬"))
