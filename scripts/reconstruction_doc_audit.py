@@ -228,7 +228,7 @@ AUDIT = (
         "label": "EuRoC MAV",
         "source_hz": "미기재",
         "published_hz": "미기재",
-        "measured_hz": "200.01",
+        "measured_hz": "200.00",
         "gt_source": "비콘 동작 포착(6자유도 자세), 기계실은 라이카 MS50 "
                      "레이저 추적기(3차원 위치)",
         # 공개 페이지는 기준 궤적이 맞춰져 있다고만 적고 무엇으로 메웠는지는
