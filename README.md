@@ -16,7 +16,7 @@ use, and compare it against the gaps between leaderboard entries.
 ## Layout
 
     scripts/       measurement and table code (48 files)
-    tests/         the test suite (44 files); run it first
+    tests/         the test suite (45 files); run it first
     results/next/  the tables this code produced (84 files)
 
 ## Running the tests

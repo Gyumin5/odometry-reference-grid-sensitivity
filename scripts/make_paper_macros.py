@@ -268,6 +268,22 @@ def release_count_macros(rows):
             ("NIndoor", word(hand)), ("NVehicle", word(len(rel) - hand))]
 
 
+def wheeled_indoor_macros(seq_rows):
+    """실내 릴리스 안에 섞인 바퀴 시퀀스 수.
+
+    튬 알지비디는 릴리스 전체를 손에 들고 찍은 것으로 적으면 틀린다 —
+    공개 묶음에 파이어니어 로봇 위에서 찍은 범주가 따로 있고 우리가 읽는
+    집합에도 들어 있다. 본문이 플랫폼을 가르는 자리에서 그 수를 글자로
+    박으면 등록부가 바뀌어도 문장이 안 따라온다.
+
+    세는 단위는 창이 아니라 원래 시퀀스다. 공통 창 규칙이 한 시퀀스를
+    여럿으로 쪼개 "#숫자" 를 붙이므로 그 꼬리를 떼고 센다.
+    """
+    base = {r["sequence"].split("#")[0] for r in seq_rows
+            if "pioneer" in r["sequence"]}
+    return [("RegTumRgbdWheeled", word(len(base)))]
+
+
 def register_count_macros(register):
     """릴리스마다 우리가 읽은 시퀀스 수.
 
@@ -1882,6 +1898,8 @@ def main():
                     default="results/next/dataset_register.csv")
     ap.add_argument("--rule-ratio",
                     default="results/next/rule_ratio_common.csv")
+    ap.add_argument("--tumrgbd-seq",
+                    default="results/next/tumrgbd_rpe1m_D.csv")
     ap.add_argument("--out-dir", default="paper_tim")
     args = ap.parse_args()
 
@@ -1921,6 +1939,7 @@ def main():
                      (args.gap_score, gap_policy_macros),
                      (args.gap_load, gap_load_macros),
                      (args.rule_ratio, rule_ratio_common_macros),
+                     (args.tumrgbd_seq, wheeled_indoor_macros),
                      (args.boundary, official_boundary_macros)):
         if os.path.exists(path):
             all_macros += fn(read_table(path))
