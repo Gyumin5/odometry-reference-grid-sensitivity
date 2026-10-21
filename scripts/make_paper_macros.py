@@ -555,6 +555,13 @@ def moving_threshold():
     return float(MOVING_M)
 
 
+def fast_threshold():
+    """핏서티엠 각도 단위 탐침이 걸음을 고르는 속력 문턱. 그 코드의 상수다."""
+    from pit30m_angle_unit_probe import FAST
+
+    return float(FAST)
+
+
 def sweep_ratio_macros():
     """주기를 낮추는 비율 집합. 훑기 코드의 상수를 그대로 읽는다.
 
@@ -1283,7 +1290,11 @@ def angle_unit_macros(rows):
                      "%.2f")),
             ("AngleUnitRadBest",
              at_least(min(float(r["median_deg_as_radian"]) for r in judged),
-                      "%.0f"))]
+                      "%.0f")),
+            # 중앙값이 걸치는 걸음의 문턱. 이 속력을 엄격히 넘는 걸음만 든다
+            # — 본문이 조건 없이 적으면 정지와 저속까지 든 중앙값으로 읽힌다.
+            # 상수에서 뽑아 글자로 안 들게 한다.
+            ("AngleUnitFast", "%g" % fast_threshold())]
 
 
 def oxford_macros(rows):
