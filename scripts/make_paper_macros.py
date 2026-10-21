@@ -1182,13 +1182,25 @@ def window_pooled_macros(rows):
     보인다. 그래서 자기 점수로 나눈 비를 같이 적는다 — 그쪽은 빌린 격자가
     안 들어간다.
     """
+    def read(r, col):
+        """빈 칸은 0 으로 읽지 않는다 — "안 움직였다" 로 세어진다.
+
+        여기 수는 전부 열아홉 줄의 최대이거나 문턱을 넘는 줄의 개수다. 결측을
+        0 으로 채우면 최대는 덜 나오고 개수는 작게 나오는데, 둘 다 주장이
+        느슨해지는 쪽이라 본문만 보고는 못 알아챈다.
+        """
+        raw = r[col]
+        if not raw:
+            sys.exit("%s(%s) 줄의 %s 칸이 비었다 — 창이 옮긴 양을 0 으로 "
+                     "채우면 안 움직였다고 세어진다" % (r["release"],
+                                                       r["rule"], col))
+        return float(raw)
+
     def cell(r, axis, key):
-        raw = r["%s_%s_over_display" % (axis, key)]
-        return float(raw) if raw else 0.0
+        return read(r, "%s_%s_over_display" % (axis, key))
 
     def rel(r, axis, key):
-        raw = r["%s_%s_rel_pct" % (axis, key)]
-        return float(raw) if raw else 0.0
+        return read(r, "%s_%s_rel_pct" % (axis, key))
 
     CELLS = [(axis, key) for key in ("main", "sweep")
              for axis in ("rot", "trans")]

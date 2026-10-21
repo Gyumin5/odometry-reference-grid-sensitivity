@@ -175,9 +175,29 @@ every measured value into the text. `results/next/environment.json`
 records the Python, numpy and scipy versions the stored tables were
 produced with.
 
+## Rerunning the official KITTI program
+
+The comparison against the official evaluation code needs that code,
+which is not redistributed here. Fetch and check it:
+
+    https://s3.eu-central-1.amazonaws.com/avg-kitti/devkit_odometry.zip
+    sha256 c4703456de60cdeaaec672381fbe169155ba4c2fcded102335b42cb07ff76758
+
+Unpack it and pass the `cpp` directory:
+
+    python3 scripts/kitti_official_binary_check.py \\
+        --devkit <path>/devkit/cpp --kitti-root <path>/kitti/dataset
+
+`evaluate_odometry.cpp` ships with a `main` that does not match the
+`mail.h` beside it, so the script copies the file up to the line where
+`main` starts and compiles that copy with `matrix.cpp`. The part it keeps
+is byte for byte the original.
+
 ## Requirements
 
-Python 3, numpy, scipy, matplotlib.
+Python 3, numpy, scipy, matplotlib, and a C++ compiler for the section
+above. If scipy is installed in your user site directory, do not run
+these scripts with `python3 -I`: that flag drops it from the path.
 """
 
 
