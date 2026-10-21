@@ -23,7 +23,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from kitti_official_binary_check import build  # noqa: E402
+from kitti_official_binary_check import DRIFT_EPS, build  # noqa: E402
 from kitti_segment_D import (  # noqa: E402
     geodesic, relative, segment_weights, segments,
 )
@@ -56,7 +56,9 @@ def main():
     ap.add_argument("--devkit",
                     default="state/devkit-20261020/extracted/devkit/cpp")
     ap.add_argument("--frames", type=int, default=201)
-    ap.add_argument("--eps", type=float, default=1e-5,
+    # 11 시퀀스 드리프트 탐침과 같은 값을 쓴다. 숫자를 여기 또 적으면 한쪽만
+    # 바뀌어도 본문이 둘 중 어느 것을 가리키는지 알 수 없게 된다.
+    ap.add_argument("--eps", type=float, default=DRIFT_EPS,
                     help="추정이 가진 프레임당 회전 흔들림(라디안)")
     # 찍히는 값이 격자 위에 있어서, 격자 한 칸을 건너뛰는 자리가 가장 불리하다.
     # 그 자리를 못 밟는 성긴 그물로는 "넘지 않는다" 가 나온다 — 격자가 0 으로

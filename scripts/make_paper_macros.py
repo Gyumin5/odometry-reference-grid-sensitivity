@@ -886,7 +886,23 @@ def official_macros(rows):
             ("OfficialProbeIdentical", at_most(max(same), "%.3g")),
             ("OfficialProbeRigid", at_most(max(rigid), "%.3g")),
             ("OfficialDriftMedian", "%.2g" % (100 * median(drift))),
-            ("OfficialDriftMax", at_most(100 * max(drift), "%.2g"))]
+            ("OfficialDriftMax", at_most(100 * max(drift), "%.2g")),
+            # 그 탐침이 추정에 실은 프레임당 각. 본문이 이 값을 적어야
+            # 재현이 선다 — 공식 프로그램의 상대오차가 각의 크기에 강하게
+            # 걸려서(이 자료에서 1e-7 이면 100 %, 1e-5 면 1.2 %) 다른 값을
+            # 넣으면 본문 수가 안 나온다. 코드 상수에서 바로 낸다.
+            ("OfficialDriftEps", "%g" % drift_eps())]
+
+
+def drift_eps():
+    """공식 비교의 드리프트 탐침과 경계 사례가 쓰는 프레임당 각.
+
+    경계 사례는 그 값을 기본값으로 가져다 쓰므로 출처가 하나다. 숫자를
+    본문에 손으로 적으면 상수가 바뀔 때 문장만 낡는다.
+    """
+    from kitti_official_binary_check import DRIFT_EPS
+
+    return DRIFT_EPS
 
 
 # 시작 프레임 분해. 두 위상을 "시작 프레임을 품는 쪽" 과 "안 품는 쪽" 으로
