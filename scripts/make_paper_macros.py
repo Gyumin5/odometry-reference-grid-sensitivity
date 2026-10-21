@@ -7,7 +7,7 @@
 
 만드는 것 둘.
   numbers.tex      매크로. \\DkittiSegTrans 처럼 릴리스·규칙·칸으로 이름이 선다.
-  table_bounds.tex 릴리스 여섯 × 구간 규칙 둘 표의 본문 줄들.
+  table_bounds.tex 릴리스마다 한 줄씩, 그 릴리스에 서는 구간 규칙 칸들.
 """
 
 import argparse
