@@ -1,0 +1,138 @@
+#!/usr/bin/env python3
+"""어긋남에 대한 상한과 그 아래 깔린 두 바닥을 한 장에 그린다.
+
+본문이 말로 적은 것 셋을 한 눈에 둔다. 상한은 어긋남에 비례한다는 것, 그
+비례선이 순위표가 찍는 한 칸을 어디에서 지나는가, 그리고 공개 행렬을 날로
+읽을 때 생기는 수치 잔여가 그 선의 어느 높이에 걸리는가.
+
+수는 전부 커밋된 CSV 에서 읽는다. 손으로 옮겨 적으면 측정을 다시 돌렸을 때
+그림만 옛 값으로 남는다.
+"""
+
+import argparse
+import csv
+import os
+
+import matplotlib
+matplotlib.use("Agg")
+matplotlib.rcParams["pdf.fonttype"] = 42
+matplotlib.rcParams["ps.fonttype"] = 42
+import matplotlib.pyplot as plt  # noqa: E402
+
+LABELS = {
+    "kitti": "KITTI", "kitti360": "KITTI-360", "boreas": "Boreas",
+    "helipr": "HeLiPR", "nuscenes": "nuScenes", "pit30m": "Pit30M",
+    "tumrgbd": "TUM RGB-D", "nclt": "NCLT", "tumvi": "TUM VI",
+    "euroc": "EuRoC MAV",
+}
+MARKERS = {"kitti": "o", "kitti360": "s", "boreas": "^", "helipr": "v",
+           "nuscenes": "D", "pit30m": "x", "tumrgbd": "+", "nclt": "*",
+           "tumvi": "P", "euroc": "h"}
+
+
+def read_table(path):
+    with open(path) as f:
+        return list(csv.DictReader(f))
+
+
+def series(rows, release, rule, column):
+    """그 릴리스·규칙의 (어긋남 ms, 2D) 들. 표가 적는 D 를 2D 로 옮긴다."""
+    out = []
+    for r in rows:
+        if r["release"] != release or r["rule"] != rule:
+            continue
+        if r["axis"] != "tau" or not r["param"].endswith("ms"):
+            continue
+        out.append((float(r["param"][:-2]), 2.0 * float(r[column])))
+    return sorted(out)
+
+
+def display_step(rows, board, metric):
+    """그 순위표 칸이 찍는 한 칸. 여러 줄에 같은 값이 적혀 있다."""
+    for r in rows:
+        if r["board"] == board and r["metric"] == metric:
+            return float(r["display_term"])
+    return None
+
+
+def worst_floor(rows, rule, releases):
+    """그 규칙에서 가장 높은 수치 잔여. 공개 행렬을 날로 읽을 때의 값이다.
+
+    그림이 그리는 릴리스만 센다. 설명문이 이 선을 "그려진 선들의 잔여 중 가장
+    큰 것" 으로 읽는데, 선이 없는 릴리스가 최대를 쥐면 그림에 근거가 없는
+    높이에 선이 그어진다.
+    """
+    vals = [float(r["floor_deg_per_100m"]) for r in rows
+            if r["rule"] == rule and r["release"] in releases]
+    if not vals:
+        raise SystemExit("%s 규칙에서 그림이 그리는 릴리스의 잔여가 없다" % rule)
+    return max(vals)
+
+
+def panel(ax, sweep, rule, column, releases):
+    for rel in releases:
+        pts = series(sweep, rel, rule, column)
+        if not pts:
+            continue
+        ax.plot([p[0] for p in pts], [p[1] for p in pts],
+                marker=MARKERS[rel], markersize=3.5, linewidth=1.0,
+                label=LABELS[rel])
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("reference offset $\\tau$ (ms)")
+    ax.grid(True, which="major", linewidth=0.4, alpha=0.5)
+    ax.grid(True, which="minor", linewidth=0.3, alpha=0.25)
+
+
+def mark(ax, y, style, label, above):
+    """가로선 하나와 그 이름. 이름은 오른쪽 끝에 붙여 선과 안 겹치게 둔다."""
+    ax.axhline(y, color="0.35", linestyle=style, linewidth=0.9)
+    ax.text(0.99, y * (1.35 if above else 0.62), label, fontsize=7,
+            color="0.3", ha="right",
+            transform=ax.get_yaxis_transform(),
+            va="bottom" if above else "top")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--sweep", default="results/next/protocol_sweep_table.csv")
+    ap.add_argument("--floor",
+                    default="results/next/orthonormality_floor.csv")
+    ap.add_argument("--boards",
+                    default="results/next/offset_tolerance_summary.csv")
+    ap.add_argument("--out", default="paper_tim/fig_offset.pdf")
+    args = ap.parse_args()
+
+    sweep = read_table(args.sweep)
+    floors = read_table(args.floor)
+    boards = read_table(args.boards)
+    rule = "seg"
+    releases = [r for r in LABELS
+                if series(sweep, r, rule, "D_trans_pct")]
+
+    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.8))
+    panel(axes[0], sweep, rule, "D_trans_pct", releases)
+    axes[0].set_ylabel("$2D$, translation (%)")
+    step = display_step(boards, "kitti", "translation")
+    if step is not None:
+        mark(axes[0], step, "--", "printed step", above=True)
+
+    panel(axes[1], sweep, rule, "D_rot_deg_per_100m", releases)
+    axes[1].set_ylabel("$2D$, rotation (deg per 100 m)")
+    rstep = display_step(boards, "kitti", "rotation")
+    if rstep is not None:
+        # 순위표 회전 칸은 도/m 로 찍는다. 그림의 단위로 옮긴다.
+        mark(axes[1], 100 * rstep, "--", "printed step", above=True)
+    res = worst_floor(floors, rule, releases)
+    mark(axes[1], res, ":", "numerical residue", above=True)
+
+    axes[0].legend(fontsize=6.5, loc="upper left", frameon=False,
+                   ncol=2, handlelength=1.6, columnspacing=1.0)
+    fig.tight_layout(pad=0.4)
+    os.makedirs(os.path.dirname(args.out), exist_ok=True)
+    fig.savefig(args.out)
+    print("%s -> %s" % (", ".join(LABELS[r] for r in releases), args.out))
+
+
+if __name__ == "__main__":
+    main()

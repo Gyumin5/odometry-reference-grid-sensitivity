@@ -1,0 +1,7 @@
+log,n_samples,n_steps,median_deg_as_degree,p90_deg_as_degree,median_deg_as_radian,p90_deg_as_radian,verdict,empty_reason
+00682fa6,122492,59408,0.438382,0.719989,93.073988,140.957928,degree,
+006ce26a,1,0,nan,nan,nan,nan,undecided,자세가 한 점뿐이라 이동 방향이 없다
+009334fa,1,0,nan,nan,nan,nan,undecided,자세가 한 점뿐이라 이동 방향이 없다
+00a05077,343280,114207,0.478900,0.894969,93.438442,134.321892,degree,
+0106abc2,119154,94379,0.364803,0.582481,88.960750,132.801418,degree,
+017be362,289507,129301,0.511334,1.004151,89.587616,131.918434,degree,
