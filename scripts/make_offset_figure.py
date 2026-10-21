@@ -84,11 +84,17 @@ def panel(ax, sweep, rule, column, releases):
     ax.grid(True, which="minor", linewidth=0.3, alpha=0.25)
 
 
-def mark(ax, y, style, label, above):
-    """가로선 하나와 그 이름. 이름은 오른쪽 끝에 붙여 선과 안 겹치게 둔다."""
+def mark(ax, y, style, label, side="right", above=True):
+    """가로선 하나와 그 이름.
+
+    한 칸에 선이 둘이면 좌우로 갈라 붙인다. 두 선이 한 자릿수 안에 붙어
+    있어서 위아래로 가르면 두 이름이 같은 틈에서 만나고, 같은 쪽에 두면
+    글자가 겹친다.
+    """
     ax.axhline(y, color="0.35", linestyle=style, linewidth=0.9)
-    ax.text(0.99, y * (1.35 if above else 0.62), label, fontsize=7,
-            color="0.3", ha="right",
+    ax.text(0.99 if side == "right" else 0.01,
+            y * (1.25 if above else 0.72), label, fontsize=7,
+            color="0.3", ha=side,
             transform=ax.get_yaxis_transform(),
             va="bottom" if above else "top")
 
@@ -113,23 +119,29 @@ def main():
     # 한 단 폭(3.4 인치)에 두 칸을 세로로 쌓는다. 두 단을 가로지르는 그림은
     # 그 자리에 다른 글이 못 와서 쪽을 더 먹는다.
     plt.rcParams.update({"font.size": 7.0})
-    fig, axes = plt.subplots(2, 1, figsize=(3.4, 2.75), sharex=True)
+    fig, axes = plt.subplots(2, 1, figsize=(3.4, 2.45), sharex=True)
     panel(axes[0], sweep, rule, "D_trans_pct", releases)
-    axes[0].set_ylabel("$2D$, translation (%)")
+    # 두 칸 다 2D 를 그린다는 것은 설명문이 말한다. 이름에 다시 적으면
+    # 칸이 낮아졌을 때 두 세로 이름이 서로 겹친다.
+    axes[0].set_ylabel("translation (%)")
     step = display_step(boards, "kitti", "translation")
     if step is not None:
-        mark(axes[0], step, "--", "printed step", above=True)
+        mark(axes[0], step, "--", "printed step")
 
     panel(axes[1], sweep, rule, "D_rot_deg_per_100m", releases)
-    axes[1].set_ylabel("$2D$, rotation (deg/100 m)")
+    axes[1].set_ylabel("rotation (deg/100 m)")
     rstep = display_step(boards, "kitti", "rotation")
     if rstep is not None:
         # 순위표 회전 칸은 도/m 로 찍는다. 그림의 단위로 옮긴다.
-        mark(axes[1], 100 * rstep, "--", "printed step", above=True)
+        mark(axes[1], 100 * rstep, "--", "printed step")
     res = worst_floor(floors, rule, releases)
-    # 두 가로선이 한 자릿수 안에 붙어 있다. 아래 선의 이름을 위에 두면 두
-    # 이름이 같은 틈에 겹친다 — 아래쪽에 붙인다.
+    # 두 선이 한 자릿수 안에 붙어 있다. 왼쪽은 선들이 낮게 깔려 글자가 그
+    # 위에 얹히므로, 둘 다 오른쪽에 두되 위아래로 가른다 — 큰 어긋남 쪽은
+    # 선들이 이 높이를 지나 올라가 있어서 빈 자리다.
     mark(axes[1], res, ":", "numerical residue", above=False)
+    # 잔여선은 그려진 선들보다 낮아서 칸의 바닥에 붙는다. 그 아래로 한 칸을
+    # 더 열어야 이름이 테두리와 가로축 눈금 위에 얹히지 않는다.
+    axes[1].set_ylim(bottom=res / 3.0)
 
     # 세로로 쌓으면 가로축이 하나라 위 칸의 이름은 지운다.
     axes[0].set_xlabel("")
