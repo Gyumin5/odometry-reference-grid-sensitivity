@@ -36,8 +36,8 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from kitti_segment_D import (  # noqa: E402
-    common_window, geodesic, load_poses, relative, resample, segment_weights,
-    segments,
+    common_window, geodesic, load_poses, proper, relative, resample,
+    segment_weights, segments,
 )
 
 # evaluate_odometry.cpp 의 lengths[] 와 step_size 그대로.
@@ -128,6 +128,11 @@ def compare_sequence(t, rot, pos):
     움직이는가다. 앞의 것만 세면 "몇 개 다르다" 에서 멈추고 그게 큰지 작은지를
     못 말한다.
     """
+    # 구간 고르기는 공개 파일의 위치를 그대로 쓴다 — 공식 프로그램이 읽는 것이
+    # 그 숫자다. D 는 다르다. 주표의 D 는 회전을 가장 가까운 회전으로 눌러
+    # 읽으므로, 여기서도 눌러 읽지 않으면 같은 이름의 두 수가 다른 입력에서
+    # 나온다. 누름은 회전만 건드려서 구간 목록은 안 바뀐다.
+    rot = proper(rot)
     src = (np.asarray(t, dtype=float), rot, pos)
     keep = common_window(t)
     t, rot, pos = src[0][:keep], rot[:keep], pos[:keep]

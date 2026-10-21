@@ -68,6 +68,30 @@ def test_the_threshold_adds_in_the_accumulation_precision():
     assert dist[got - 1] <= np.float32(dist[0] + np.float32(length))
 
 
+def test_the_crosscheck_scores_the_projected_reference():
+    """구간은 공개 위치로 고르고 D 는 눌러 읽은 회전으로 잰다.
+
+    두 입력이 다른 이유가 있다. 구간 고르기는 공식 프로그램이 읽는 숫자를
+    그대로 써야 맞대는 의미가 있고, D 는 주표가 쓰는 수와 같은 입력이어야
+    같은 이름의 두 수가 안 갈린다. 누름은 회전만 건드려서 둘이 충돌하지
+    않는다 — 그 사실도 여기서 같이 고정한다.
+    """
+    import inspect
+
+    import kitti_official_crosscheck as x
+
+    src = inspect.getsource(x.compare_sequence)
+    assert "proper(rot)" in src, "D 입력이 눌러 읽은 회전이 아니다"
+
+    rng = np.random.default_rng(7)
+    raw = np.eye(3) + 1e-6 * rng.standard_normal((5, 3, 3))
+    pushed = x.proper(raw)
+    # 누름이 회전만 건드린다 — 위치는 아예 안 들어가고, 눌린 것은 직교다.
+    for m in pushed:
+        assert np.allclose(m @ m.T, np.eye(3), atol=1e-12)
+    assert np.max(np.abs(pushed - raw)) < 1e-5
+
+
 def test_a_differing_list_is_caught_even_when_the_counts_match():
     # 개수만 세면 못 잡는 경우를 고정한다. 길이가 같고 내용이 다른 두 목록.
     ours = [(0, 10, 100.0), (10, 21, 100.0)]

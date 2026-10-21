@@ -98,6 +98,21 @@ def test_realigning_each_pair_breaks_the_bound():
     assert slack < 0
 
 
+def test_exactly_three_counterexamples_exist():
+    """반례는 셋뿐이다 — 제곱·위치·정렬 재적합.
+
+    본문이 이 셋을 이름으로 부르는지는 tests/test_paper_matches_code.py 가
+    따로 본다. 원고는 공개 나무에 안 담기므로 그 대조를 여기 두면 이 파일이
+    통째로 공개 나무에서 빠진다 — 상한의 적대 검사까지 같이 빠진다.
+    """
+    import inspect
+    import re
+
+    src = inspect.getsource(falsify)
+    kinds = set(re.findall(r'score_kind == "(\w+)"', src))
+    assert kinds == {"squared", "position", "realigned"}, kinds
+
+
 def test_a_longer_lever_arm_breaks_the_position_bound_further():
     # 위치오차가 왜 범위 밖인지의 이유를 수치로 묶어 둔다 — 같은 회전 이동이
     # 지렛대 길이에 비례해 커지므로 회전 거리 하나로는 덮을 수 없다.
