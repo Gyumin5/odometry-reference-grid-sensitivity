@@ -1078,6 +1078,10 @@ def method_scale_macros(rows):
         if sub:
             # 이름에 Any 를 넣는다. 뺀 이름은 위 축별 고리가 회전 자리에
             # 빈 꼬리표로 이미 쓰고 있어서 조용히 덮어쓴다.
+            # 세는 단위는 시퀀스·드리프트 조건이고 표시 점수 칸이 아니다 —
+            # 한 줄이 회전과 병진 두 칸을 들고 있어서 칸 수는 이 수의 두
+            # 배다(1 ms 에서 조건 2/33 대 칸 2/66, 5 ms 에서 15/33 대 18/66).
+            # 이름의 Cells 를 믿고 본문에 "칸" 이라고 적으면 단위가 갈린다.
             out += [("Move%sCells" % when, str(len(sub))),
                     ("Move%sAnyShownChangedCount" % when, str(len(
                         [r for r in sub
