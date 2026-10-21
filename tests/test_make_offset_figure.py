@@ -51,7 +51,21 @@ def test_the_residue_line_is_the_worst_of_that_rule():
              "floor_deg_per_100m": "1.7e-07"},
             {"release": "kitti", "rule": "rpe1m",
              "floor_deg_per_100m": "1.122"}]
-    assert worst_floor(rows, "seg", ["kitti", "boreas"]) == 0.004
+    assert worst_floor(rows, "seg", ["kitti", "boreas"]) == 2 * 0.004
+
+
+def test_the_residue_line_is_doubled_like_the_curves():
+    """곡선이 2D 라 잔여선도 두 배여야 같은 척도에서 읽힌다 — 심사 25 회차.
+
+    날값을 그으면 곡선이 그 선을 지나는 자리가 D 와 잔여가 만나는 자리로
+    읽힌다. 키티에서 실제로 뒤집혔다: 잔여 0.004075 인데 1 ms 의 D 는
+    0.003281 이라 D 가 더 낮은데, 2D 0.006562 는 날값 선 위로 올라간다.
+    """
+    rows = [{"release": "kitti", "rule": "seg",
+             "floor_deg_per_100m": "0.004074794372820865"}]
+    line = worst_floor(rows, "seg", ["kitti"])
+    d_one_ms = 0.00328115478719376
+    assert 2 * d_one_ms < line, (2 * d_one_ms, line)
 
 
 def test_the_residue_line_ignores_a_release_the_figure_does_not_draw():
@@ -60,7 +74,7 @@ def test_the_residue_line_ignores_a_release_the_figure_does_not_draw():
     rows = [{"release": "kitti", "rule": "seg", "floor_deg_per_100m": "0.004"},
             {"release": "tumrgbd", "rule": "seg",
              "floor_deg_per_100m": "9.9"}]
-    assert worst_floor(rows, "seg", ["kitti"]) == 0.004
+    assert worst_floor(rows, "seg", ["kitti"]) == 2 * 0.004
     with pytest.raises(SystemExit):
         worst_floor(rows, "seg", ["nuscenes"])
 

@@ -86,19 +86,72 @@ def test_a_squared_error_score_breaks_the_bound():
     assert slack < 0
 
 
-def test_a_position_score_breaks_the_bound():
+def test_a_position_score_breaks_a_bound_read_off_another_distance():
+    """지렛대 위치는 형태를 깨는 게 아니라 거리함수가 다른 사례다.
+
+    심사 25 회차가 갈랐다. 점수는 미터로 재는데 D 는 라디안으로 재서 둘을
+    맞대니 넘는 것이다. 같은 거리로 양쪽을 재면 삼각부등식이라 안 깨진다 —
+    아래 test_the_position_score_obeys_its_own_distance 가 그걸 고정한다.
+    """
     d, diff, slack = falsify("position")
     assert diff > d
     assert slack < 0
 
 
-def test_a_common_refit_cannot_break_the_bound():
-    """양쪽에 같은 정렬을 걸면 상한은 안 깨진다 — 심사 24 회차가 잡은 자리.
+def test_the_position_score_obeys_its_own_distance():
+    # 고정점 l 에 대한 d_l(A,Q) = ||Al - Ql|| 로 양쪽을 통일하면 선다.
+    from scipy.spatial.transform import Rotation
 
-    옛 "realigned" 가지는 변경 전을 정렬 없이 재고 변경 후를 0 으로 박아서,
-    재표집이 아예 없는 delta=0 에서도 위반 2 를 냈다. 반례가 아니라 잣대를
-    바꾼 것이었다. 제대로 재면 못 깨진다는 것을 여기서 고정한다 — 최소를
-    취하는 연산이 1 차 립시츠라 두 최소의 차가 D 를 못 넘는다.
+    rng = np.random.default_rng(7)
+    worst = -9.0
+    for _ in range(200):
+        m = int(rng.integers(1, 6))
+        q = Rotation.random(m, random_state=int(rng.integers(1000000))).as_matrix()
+        qp = np.einsum("nab,nbc->nac", Rotation.from_rotvec(
+            rng.normal(scale=0.3, size=(m, 3))).as_matrix(), q)
+        a = Rotation.random(m, random_state=int(rng.integers(1000000))).as_matrix()
+        arm = rng.normal(scale=5.0, size=3)
+        w = rng.random(m)
+        w /= w.sum()
+
+        def dl(x, y):
+            return np.linalg.norm(np.einsum("nab,b->na", x, arm)
+                                  - np.einsum("nab,b->na", y, arm), axis=1)
+
+        d = float(np.dot(w, dl(q, qp)))
+        e, ep = float(np.dot(w, dl(a, q))), float(np.dot(w, dl(a, qp)))
+        worst = max(worst, abs(ep - e) - d)
+    assert worst <= 1e-9, worst
+
+
+def test_a_whole_trajectory_rigid_alignment_leaves_the_score_alone():
+    """궤적 전체의 강체 정렬은 상대자세에서 통째로 소거된다 — 원고의 주장.
+
+    세계좌표계 자세를 H 로 돌리면 상대자세는 (H P_i)^T (H P_j) = P_i^T P_j 라
+    한 톨도 안 움직인다. 그래서 기준마다 정렬을 다시 맞춰도 점수가 아예 안
+    바뀐다 — "최소값이라 D 를 못 넘는다" 보다 강한 말이고, 심사 25 회차가
+    그 최소값 논증을 쓰지 말라고 한 자리다. 이 원고가 최소화하는 목적함수가
+    아니기 때문이다.
+    """
+    from scipy.spatial.transform import Rotation
+
+    rng = np.random.default_rng(5)
+    for _ in range(50):
+        n = int(rng.integers(3, 12))
+        poses = Rotation.random(n, random_state=int(rng.integers(1000000))).as_matrix()
+        pairs = np.stack([np.arange(n - 1), np.arange(1, n)], axis=1)
+        h = Rotation.random(1, random_state=int(rng.integers(1000000))).as_matrix()[0]
+        turned = np.einsum("ab,nbc->nac", h, poses)
+        assert np.max(np.abs(relative(poses, pairs) - relative(turned, pairs))) < 1e-12
+
+
+def test_minimising_over_a_common_rotation_is_stable():
+    """상대자세에 공통 회전을 걸고 최소를 취하는 점수도 D 를 못 넘는다.
+
+    위 검사와 다른 명제다 — 이건 궤적 정렬이 아니라 상대회전을 직접 최소화하는
+    점수이고, 1 차 립시츠라 두 최소의 차가 피최소량의 최대 변화를 못 넘는다.
+    원고는 이 논증을 정렬에 갖다 쓰지 않는다(심사 25 회차). 옛 "realigned"
+    가지가 이 자리에서 변경 전후를 다른 잣대로 재고 있었다(24 회차).
     """
     from scipy.spatial.transform import Rotation
 
@@ -126,8 +179,11 @@ def test_a_common_refit_cannot_break_the_bound():
         assert abs(refit(a, qp, w) - refit(a, q, w)) <= d + 1e-9
 
 
-def test_exactly_two_counterexamples_exist():
-    """반례는 둘뿐이다 — 제곱과 지렛대 위치.
+def test_exactly_two_falsify_branches_exist():
+    """falsify 의 갈래는 둘이다 — 제곱과 지렛대 위치.
+
+    형태를 깨는 반례는 제곱 하나뿐이다. 지렛대는 거리함수를 다르게 쓴
+    사례라 본문이 반례로 부르지 않는다(심사 25 회차).
 
     본문이 이 둘을 이름으로 부르는지는 tests/test_paper_matches_code.py 가
     따로 본다. 원고는 공개 나무에 안 담기므로 그 대조를 여기 두면 이 파일이

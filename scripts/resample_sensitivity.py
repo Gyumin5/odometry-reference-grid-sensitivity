@@ -188,6 +188,14 @@ def check_once(traj, est, gridkind, method, n, fs, seed, use_random_weights):
 def falsify(score_kind, delta=0.01, arm_m=10.0):
     """상한이 안 서는 쪽 둘. 여기서는 위반이 나오는 게 정상이다.
 
+    둘이 같은 종류가 아니다(심사 25 회차). "squared" 는 형태 자체를 깬다 —
+    제곱한 거리는 거리가 아니라 삼각부등식이 없어진다. "position" 은 형태가
+    아니라 거리함수가 다른 것이다 — 점수는 지렛대 끝점의 미터를 재는데 D 는
+    라디안으로 재서 맞댄다. 같은 거리 d_l(A,Q)=||Al-Ql|| 로 양쪽을 통일하면
+    삼각부등식이라 안 깨진다(test_the_position_score_obeys_its_own_distance).
+    그래서 본문은 반례를 하나로 적고 지렛대는 "D 를 다른 거리로 읽으면 안
+    된다" 는 사례로 적는다.
+
     난수 궤적으로는 이걸 못 보인다 — 쌍이 수백 개면 부호가 엇갈려 상쇄되고,
     안 서는 점수도 우연히 서 버린다. 그래서 쌍 하나로 직접 만든다.
     기준 Q = I, 재표집된 기준 Q' = z 축 delta 회전이라 D = delta 다.

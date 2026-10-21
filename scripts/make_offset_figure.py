@@ -61,12 +61,17 @@ def worst_floor(rows, rule, releases):
     그림이 그리는 릴리스만 센다. 설명문이 이 선을 "그려진 선들의 잔여 중 가장
     큰 것" 으로 읽는데, 선이 없는 릴리스가 최대를 쥐면 그림에 근거가 없는
     높이에 선이 그어진다.
+
+    돌려주는 것은 잔여의 두 배다. 곡선이 2D 라 날값을 그으면 척도가 갈려서,
+    곡선이 그 선을 지나는 자리가 D 와 잔여가 만나는 자리로 읽힌다. 키티에서
+    실제로 뒤집혔다 — 잔여 0.004075 인데 1 ms 의 D 가 0.003281 이라 D 가 더
+    낮은데, 2D 는 0.006562 라 그림에서는 선 위로 올라갔다(심사 25 회차).
     """
     vals = [float(r["floor_deg_per_100m"]) for r in rows
             if r["rule"] == rule and r["release"] in releases]
     if not vals:
         raise SystemExit("%s 규칙에서 그림이 그리는 릴리스의 잔여가 없다" % rule)
-    return max(vals)
+    return 2.0 * max(vals)
 
 
 def panel(ax, sweep, rule, column, releases):
@@ -145,7 +150,7 @@ def main():
     # 두 선이 한 자릿수 안에 붙어 있다. 왼쪽은 선들이 낮게 깔려 글자가 그
     # 위에 얹히므로, 둘 다 오른쪽에 두되 위아래로 가른다 — 큰 어긋남 쪽은
     # 선들이 이 높이를 지나 올라가 있어서 빈 자리다.
-    mark(axes[1], res, ":", "numerical residue", above=False)
+    mark(axes[1], res, ":", "twice numerical residue", above=False)
     # 잔여선은 그려진 선들보다 낮아서 칸의 바닥에 붙는다. 그 아래로 한 칸을
     # 더 열어야 이름이 테두리와 가로축 눈금 위에 얹히지 않는다.
     axes[1].set_ylim(bottom=res / 6.0)
