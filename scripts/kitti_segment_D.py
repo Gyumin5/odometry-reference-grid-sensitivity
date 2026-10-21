@@ -735,8 +735,8 @@ def main():
     ap.add_argument("--root", default="",
                     help="비우면 RELEASE_ROOTS 의 값")
     ap.add_argument("--rpe1m", action="store_true",
-                    help="키티-360 공식 순위표의 구간 규칙 — 1 m 간격, 모든 "
-                         "프레임이 시작점")
+                    help="키티-360 공식 순위표의 1 m 간격 규칙. 모든 프레임을 "
+                         "시작점으로 두는 것은 공식 문서에 없는 자체 규약이다")
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
     lengths, step = ((1.0,), 1) if args.rpe1m else (LENGTHS, STEP)
