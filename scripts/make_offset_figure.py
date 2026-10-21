@@ -119,7 +119,7 @@ def main():
     # 한 단 폭(3.4 인치)에 두 칸을 세로로 쌓는다. 두 단을 가로지르는 그림은
     # 그 자리에 다른 글이 못 와서 쪽을 더 먹는다.
     plt.rcParams.update({"font.size": 7.0})
-    fig, axes = plt.subplots(2, 1, figsize=(3.4, 2.25), sharex=True)
+    fig, axes = plt.subplots(2, 1, figsize=(3.4, 2.05), sharex=True)
     panel(axes[0], sweep, rule, "D_trans_pct", releases)
     # 두 칸 다 2D 를 그린다는 것은 설명문이 말한다. 이름에 다시 적으면
     # 칸이 낮아졌을 때 두 세로 이름이 서로 겹친다.

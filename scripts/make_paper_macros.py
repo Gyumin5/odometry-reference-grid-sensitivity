@@ -897,8 +897,15 @@ def method_scale_macros(rows):
     구간을 다시 고르므로 그 출력의 차이에는 재선택이 섞이고, 정리가 요구하는
     전제가 그 비교에는 안 선다.
     """
+    # 드리프트 값은 시퀀스마다 고르지 않고 같은 목록을 전부에 적용한다.
+    # 본문이 "순위표 칸에 맞춰 시퀀스마다 골랐다" 고 적으면 생성 절차가
+    # 자료와 어긋난다 — 그래서 개수와 양 끝을 자료에서 뽑아 낸다.
+    eps = sorted({float(r["eps_rad_per_frame"]) for r in rows})
     out = [("MoveCells", str(len(rows))),
            ("MoveSequences", str(len({r["sequence"] for r in rows}))),
+           ("MoveEpsCount", word(len(eps))),
+           ("MoveEpsMin", at_least(eps[0], "%.2g")),
+           ("MoveEpsMax", at_most(eps[-1], "%.2g")),
            ("MoveSegmentsKeptCount", str(len(
                [r for r in rows if r["segments_kept"] == "1"])))]
     # 상한을 넘은 칸은 축을 가리지 않고 센다. 한 축만 세면 다른 축에서 깨진
