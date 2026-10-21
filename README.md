@@ -40,6 +40,18 @@ was read, the time it publishes, the axis we measured on, the rate we
 measured, and the terms page. The published time and the measured axis
 are separate columns: on KITTI-360 they differ.
 
+## Regenerating the numbers from the stored tables
+
+The tables in `results/next/` are enough on their own; no dataset is
+needed for this step.
+
+    python3 scripts/make_paper_macros.py --out-dir <directory>
+
+This reads `results/next/` and writes the macro definitions that carry
+every measured value into the text. `results/next/environment.json`
+records the Python, numpy and scipy versions the stored tables were
+produced with.
+
 ## Requirements
 
 Python 3, numpy, scipy, matplotlib.

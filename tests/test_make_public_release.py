@@ -104,3 +104,10 @@ def test_the_released_tree_ignores_what_running_the_tests_leaves(tmp_path):
         got = out / "results" / "next" / "environment.json"
         assert got.exists()
         assert got.read_text() == open(src).read()
+
+    # 34 회차 권고 3. 받는 쪽이 자료 없이 할 수 있는 것은 보관된 표에서
+    # 수를 다시 내는 것이다. 그 명령이 안내에 없으면 표만 있고 그 표가
+    # 본문의 어느 수가 되는지는 알 수 없다.
+    readme = (out / "README.md").read_text()
+    assert "scripts/make_paper_macros.py --out-dir" in readme
+    assert "results/next/environment.json" in readme
