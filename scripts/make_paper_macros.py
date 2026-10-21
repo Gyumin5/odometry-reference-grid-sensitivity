@@ -687,7 +687,14 @@ def cancellation_macros(rows):
     frac = [median([float(x["frac_of_twoD_median"]) for x in v])
             for v in by.values()]
     flip = [median([float(x["flip_rate"]) for x in v]) for v in by.values()]
+    # 접기 전의 두 수. 조건 범위만 내면 그것이 시행 전체의 범위처럼 읽힌다 —
+    # 한 시퀀스의 중앙값과 한 시행의 최댓값이 그 범위 위로 올라간다.
+    seq_frac = max(float(r["frac_of_twoD_median"]) for r in rows)
+    draw_frac = max(float(r["shift_max"]) / float(r["twoD_deg_per_100m"])
+                    for r in rows if float(r["twoD_deg_per_100m"]) > 0)
     return [("CancelConditions", str(len(by))),
+            ("CancelFracSeqMax", at_most(100 * seq_frac, "%.3g")),
+            ("CancelFracDrawMax", at_most(100 * draw_frac, "%.3g")),
             ("CancelFracMin", at_least(100 * min(frac), "%.2g")),
             ("CancelFracMax", at_most(100 * max(frac), "%.2g")),
             ("CancelFlipNone", str(sum(1 for x in flip if x == 0))),
@@ -696,7 +703,7 @@ def cancellation_macros(rows):
             # 접히기 전의 수를 같이 내야 본문이 그 꼬리를 숨기지 않는다.
             ("CancelFlipAnyConditions",
              str(sum(1 for x in worst if x > 0))),
-            ("CancelFlipWorst", "%.3g" % (100 * max(worst)))]
+            ("CancelFlipWorst", at_most(100 * max(worst), "%.3g"))]
 
 
 def official_macros(rows):
