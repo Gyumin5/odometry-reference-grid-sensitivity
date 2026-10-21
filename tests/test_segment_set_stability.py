@@ -107,6 +107,43 @@ def test_a_segment_that_disappears_is_in_the_denominator_only():
     assert w.sum() > w[live].sum()                # 분모엔 죽은 것이 남아 있다
 
 
+def test_the_baseline_is_reselected_on_the_window_and_can_differ_at_ties():
+    """기준 끝점은 공통 창에서 다시 고른 것이다 — 30 회차.
+
+    segments 는 궤적 전체의 누적거리에서 끝점을 고르고 endpoints 는 창만 떼어
+    다시 고른다. 공식 규칙이 엄격한 초과 판정이라, 경계에 정확히 닿는 구간은
+    두 누적 방식의 부동소수 차이만으로 갈린다. 간격마다 정확히 0.1 m 를 가는
+    균일 궤적에서 1 m 규칙을 걸면 경계에 닿는 구간이 수백 개라 그 자리가
+    실제로 밟힌다.
+
+    기준을 창에서 다시 고르는 쪽을 유지한다. 원본 목록을 기준으로 바꾸면 아무
+    것도 안 바꾼 규약(null)에서도 그 동률 차이가 "옮겨간 줄" 로 세어져서, 보고
+    하는 모든 수가 규약 몫이 아니라 동률 잡음을 얹고 올라간다 — 26 회차가 묶은
+    "null 은 0" 이 그 불변량이다. 대신 이 검사가 그 차이의 존재를 못박고 본문이
+    기준을 그렇게 적는지 본다.
+    """
+    from protocol_sweep import window, window_segments
+    from segment_set_stability import RULES
+
+    n = 600
+    t = 0.1 * np.arange(n)
+    pos = np.zeros((n, 3))
+    pos[:, 0] = 0.1 * np.arange(n)
+
+    lengths, step = RULES[1][1], RULES[1][2]      # 1 m 규칙
+    dt = float(np.median(np.diff(t)))
+    lo, hi = window(t, dt)
+    m = (t >= lo) & (t <= hi)
+    idx = window_segments(pos, m, lengths, step)
+    assert idx
+
+    pairs = [(i, L) for (i, _j, L) in idx]
+    orig_j = np.asarray([j for (_i, j, _L) in idx])
+    reselected, _ = endpoints(np.asarray(pos)[m], pairs)
+
+    assert int((reselected != orig_j).sum()) > 0, "이 입력에서는 갈려야 한다"
+
+
 def test_the_cumulative_distance_starts_at_zero_and_is_monotone():
     d = arc(line(step=2.0))
     assert d[0] == 0.0

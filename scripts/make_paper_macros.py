@@ -533,6 +533,19 @@ def sweep_macros(rows):
             + method_over_rate_macros(rows))
 
 
+def sweep_ratio_macros():
+    """주기를 낮추는 비율 집합. 훑기 코드의 상수를 그대로 읽는다.
+
+    본문이 "주기를 낮춘 쪽" 의 최댓값끼리 맞대 비교하는데, 그 최댓값이 어느
+    집합 위에서의 최댓값인지가 적혀 있지 않으면 읽는 쪽이 연속 훑기로 읽는다.
+    유한한 셋이다 — 손으로 옮겨 적으면 상수를 바꿀 때 본문만 옛 값으로 남는다.
+    """
+    from protocol_sweep import RATIOS
+
+    v = ["$%g$" % r for r in RATIOS]
+    return [("SweepRatios", ", ".join(v[:-1]) + " and " + v[-1])]
+
+
 def method_over_rate_macros(rows):
     """복원 방식의 몫이 주기의 몫보다 큰 줄이 몇인가.
 
@@ -1992,6 +2005,7 @@ def main():
         all_macros += rate_group_macros(
             rows, read_table(args.register),
             read_table(args.sweep) if os.path.exists(args.sweep) else None)
+    all_macros += sweep_ratio_macros()
     all_macros += environment_macros()
 
     nums = os.path.join(args.out_dir, "numbers.tex")
