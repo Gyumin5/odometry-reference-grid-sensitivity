@@ -199,6 +199,29 @@ def per_sequence_macros(rows):
     return out
 
 
+def segment_rule_population_macros(rows, register):
+    """100~800 m 규칙이 등록 시퀀스의 일부에서만 서는 릴리스들.
+
+    상한 표는 그 규칙이 실제로 선 시퀀스만 센다. 등록 수를 모르면 그 수가
+    릴리스 전체의 성질처럼 읽히는데, 한 시퀀스에서만 선 값과 열한 개를
+    모은 값은 같은 줄에 적혀도 같은 종류가 아니다.
+    """
+    reg = {r["release"]: int(r["sequences"]) for r in register
+           if r.get("sequences")}
+    short = []
+    for rel in NAMES:
+        for r in rows:
+            if r["release"] != rel or r["rule"] != "seg":
+                continue
+            have, total = int(r["n_sequences"]), reg.get(rel)
+            if total is not None and have < total:
+                short.append("%s %d of %d" % (LABELS[rel], have, total))
+    if not short:
+        return []
+    return [("SegRuleShortList", ", ".join(short)),
+            ("SegRuleShortCount", str(len(short)))]
+
+
 def sweep_population_macros(rows):
     """상한 표와 훑기 표의 시퀀스 수가 갈리는 자리.
 
@@ -692,7 +715,15 @@ def cancellation_macros(rows):
     seq_frac = max(float(r["frac_of_twoD_median"]) for r in rows)
     draw_frac = max(float(r["shift_max"]) / float(r["twoD_deg_per_100m"])
                     for r in rows if float(r["twoD_deg_per_100m"]) > 0)
+    # 조건 격자의 축을 그대로 적는다. 조건 수만 적으면 그 수가 무엇을
+    # 곱한 것인지가 본문에서 사라진다.
+    def axis(col):
+        return ", ".join(sorted(set(r[col] for r in rows), key=float))
+
     return [("CancelConditions", str(len(by))),
+            ("CancelScoreList", axis("score_deg_per_100m")),
+            ("CancelGapList", axis("gap_deg_per_100m")),
+            ("CancelRhoList", axis("rho")),
             ("CancelFracSeqMax", at_most(100 * seq_frac, "%.3g")),
             ("CancelFracDrawMax", at_most(100 * draw_frac, "%.3g")),
             ("CancelFracMin", at_least(100 * min(frac), "%.2g")),
@@ -1847,6 +1878,8 @@ def main():
     all_macros = (list(macros(rows)) + list(ratio_macros(rows))
                   + list(per_sequence_macros(rows))
                   + list(sweep_population_macros(rows))
+                  + list(segment_rule_population_macros(
+                      rows, read_table(args.register)))
                   + list(release_count_macros(rows))
                   + list(table_min_macros(rows)))
     for path, fn in ((args.sweep, sweep_macros), (args.boards, board_macros),

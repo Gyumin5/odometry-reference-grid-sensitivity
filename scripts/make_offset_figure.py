@@ -123,13 +123,17 @@ def main():
     panel(axes[0], sweep, rule, "D_trans_pct", releases)
     # 두 칸 다 2D 를 그린다는 것은 설명문이 말한다. 이름에 다시 적으면
     # 칸이 낮아졌을 때 두 세로 이름이 서로 겹친다.
-    axes[0].set_ylabel("translation (%)")
+    # 이름을 두 줄로 끊는다. 한 줄로 두면 글자의 세로 길이가 제 칸보다 길어져
+    # 위아래 두 이름이 서로를 덮는다 — 칸 높이를 2.05 인치로 내렸을 때 실제로
+    # 그렇게 찍혔다(원고 그림에서 "rotation (deg/100 m)" 이 "translation (%)"
+    # 위로 올라갔다). 끊으면 어느 칸 높이에서도 제 칸 안에 들어간다.
+    axes[0].set_ylabel("translation\n(%)")
     step = display_step(boards, "kitti", "translation")
     if step is not None:
         mark(axes[0], step, "--", "printed step")
 
     panel(axes[1], sweep, rule, "D_rot_deg_per_100m", releases)
-    axes[1].set_ylabel("rotation (deg/100 m)")
+    axes[1].set_ylabel("rotation\n(deg/100 m)")
     rstep = display_step(boards, "kitti", "rotation")
     if rstep is not None:
         # 순위표 회전 칸은 도/m 로 찍는다. 그림의 단위로 옮긴다.
@@ -145,9 +149,13 @@ def main():
 
     # 세로로 쌓으면 가로축이 하나라 위 칸의 이름은 지운다.
     axes[0].set_xlabel("")
-    axes[0].legend(fontsize=5.8, loc="upper left", frameon=False,
-                   ncol=2, handlelength=1.3, columnspacing=0.8,
-                   labelspacing=0.25)
+    # 이름표는 아래 칸의 왼쪽 위에 둔다. 위 칸은 선들이 왼쪽 아래에서
+    # 오른쪽 위로 가로질러서 빈 구석이 없다 — 거기 두면 글자가 선과 표식
+    # 위에 얹힌다. 아래 칸은 가장 높은 선조차 왼쪽에서 한참 낮게 시작해
+    # 왼쪽 위가 비어 있다. 세 줄로 접어 그 빈 자리 안에 들어가게 한다.
+    axes[1].legend(fontsize=5.8, loc="upper left", frameon=False,
+                   ncol=3, handlelength=1.3, columnspacing=0.8,
+                   labelspacing=0.2)
     fig.tight_layout(pad=0.4)
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     fig.savefig(args.out)
