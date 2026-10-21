@@ -211,12 +211,18 @@ def segment_rule_population_macros(rows, register):
            if r.get("sequences")}
     short = []
     for rel in NAMES:
-        for r in rows:
-            if r["release"] != rel or r["rule"] != "seg":
-                continue
-            have, total = int(r["n_sequences"]), reg.get(rel)
-            if total is not None and have < total:
-                short.append("%s %d of %d" % (LABELS[rel], have, total))
+        if not any(r["release"] == rel for r in rows):
+            continue
+        total = reg.get(rel)
+        if total is None:
+            continue
+        # 구간이 하나도 안 서는 릴리스도 이 목록에 든다. seg 줄이 있는 것만
+        # 돌면 0 개인 릴리스는 들어올 길이 없어서, "일부에서만 선다" 는
+        # 목록이 "전혀 안 선다" 는 쪽을 조용히 빠뜨린다.
+        seg = [r for r in rows if r["release"] == rel and r["rule"] == "seg"]
+        have = int(seg[0]["n_sequences"]) if seg else 0
+        if have < total:
+            short.append("%s %d of %d" % (LABELS[rel], have, total))
     if not short:
         return []
     return [("SegRuleShortList", ", ".join(short)),
