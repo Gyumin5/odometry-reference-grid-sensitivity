@@ -110,7 +110,10 @@ def main():
     releases = [r for r in LABELS
                 if series(sweep, r, rule, "D_trans_pct")]
 
-    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.8))
+    # 한 단 폭(3.4 인치)에 두 칸을 세로로 쌓는다. 두 단을 가로지르는 그림은
+    # 그 자리에 다른 글이 못 와서 쪽을 더 먹는다.
+    plt.rcParams.update({"font.size": 7.0})
+    fig, axes = plt.subplots(2, 1, figsize=(3.4, 2.75), sharex=True)
     panel(axes[0], sweep, rule, "D_trans_pct", releases)
     axes[0].set_ylabel("$2D$, translation (%)")
     step = display_step(boards, "kitti", "translation")
@@ -118,16 +121,21 @@ def main():
         mark(axes[0], step, "--", "printed step", above=True)
 
     panel(axes[1], sweep, rule, "D_rot_deg_per_100m", releases)
-    axes[1].set_ylabel("$2D$, rotation (deg per 100 m)")
+    axes[1].set_ylabel("$2D$, rotation (deg/100 m)")
     rstep = display_step(boards, "kitti", "rotation")
     if rstep is not None:
         # 순위표 회전 칸은 도/m 로 찍는다. 그림의 단위로 옮긴다.
         mark(axes[1], 100 * rstep, "--", "printed step", above=True)
     res = worst_floor(floors, rule, releases)
-    mark(axes[1], res, ":", "numerical residue", above=True)
+    # 두 가로선이 한 자릿수 안에 붙어 있다. 아래 선의 이름을 위에 두면 두
+    # 이름이 같은 틈에 겹친다 — 아래쪽에 붙인다.
+    mark(axes[1], res, ":", "numerical residue", above=False)
 
-    axes[0].legend(fontsize=6.5, loc="upper left", frameon=False,
-                   ncol=2, handlelength=1.6, columnspacing=1.0)
+    # 세로로 쌓으면 가로축이 하나라 위 칸의 이름은 지운다.
+    axes[0].set_xlabel("")
+    axes[0].legend(fontsize=5.8, loc="upper left", frameon=False,
+                   ncol=2, handlelength=1.3, columnspacing=0.8,
+                   labelspacing=0.25)
     fig.tight_layout(pad=0.4)
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     fig.savefig(args.out)
