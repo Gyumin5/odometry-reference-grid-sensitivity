@@ -201,6 +201,12 @@ def main():
                      os.path.join(args.out, "results", "next", f))
     shutil.copy2(os.path.join(ROOT, "LICENSE"),
                  os.path.join(args.out, "LICENSE"))
+    # 표를 낸 기계의 판본 기록. 이것 없이 받는 쪽에서 매크로를 다시 내면
+    # 그 기계의 환경이 적히고, 같은 표가 다른 판본 줄을 달고 나온다.
+    env = os.path.join(RESULTS, "environment.json")
+    if os.path.exists(env):
+        shutil.copy2(env, os.path.join(args.out, "results", "next",
+                                       "environment.json"))
     # 받는 쪽은 이 나무 안에서 검사를 돌린다. 그때 생기는 바이트 묶음이
     # 저장소로 들어가면 공개본에 이 기계의 경로가 박힌 채 실린다.
     with open(os.path.join(args.out, ".gitignore"), "w") as f:

@@ -1324,7 +1324,10 @@ def time_axis_macros(rows):
     if not have:
         return []
     ratio = [float(r["step_ratio_median"]) for r in have]
-    jg = [float(r["speed_jitter_grid"]) for r in rows]
+    # 격자축 값도 시각이 있는 주행만 센다. 본문이 그 둘을 나란히 놓고
+    # 비교하는데 시각축 값은 그 주행들에만 있다 — 없는 주행을 격자 쪽에만
+    # 넣으면 두 수가 다른 집합 위의 값이 된다.
+    jg = [float(r["speed_jitter_grid"]) for r in have]
     js = [float(r["speed_jitter_stamp"]) for r in have]
     seg = [float(r["seg_t_phase_half_ratio"]) for r in have]
     rpe = [float(r["rpe1m_t_phase_half_ratio"]) for r in have]

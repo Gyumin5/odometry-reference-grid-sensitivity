@@ -95,3 +95,12 @@ def test_the_released_tree_ignores_what_running_the_tests_leaves(tmp_path):
          "--out", str(out)], env=env, stdout=subprocess.DEVNULL)
     ignored = (out / ".gitignore").read_text().split()
     assert "__pycache__/" in ignored and "*.pyc" in ignored
+
+    # 32 회차 권고 2. 표를 낸 기계의 판본 기록이 표와 같이 가야 한다.
+    # 없으면 받는 쪽에서 매크로를 다시 낼 때 그 기계의 환경이 적히고,
+    # 같은 표가 다른 판본 줄을 달고 나온다.
+    src = os.path.join(root, "results", "next", "environment.json")
+    if os.path.exists(src):
+        got = out / "results" / "next" / "environment.json"
+        assert got.exists()
+        assert got.read_text() == open(src).read()
