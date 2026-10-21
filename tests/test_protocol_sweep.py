@@ -390,6 +390,55 @@ def test_no_variant_asks_for_a_time_outside_the_released_samples():
             assert tw[0] >= t[sl][0]
 
 
+def test_every_variant_is_scored_on_the_one_segment_list():
+    """구간·가중치·정규화 길이가 변형마다 다시 골라지지 않는지 본다.
+
+    상한이 서는 조건이 "구간·대응·가중치가 고정" 이라서, 비교 한쪽이
+    자기 자세로 구간을 다시 고르면 그 비교는 정리가 말하는 양이 아니다.
+    훑기는 원본 자세에서 창 안 구간을 한 번만 고르고 모든 변형에 그것을
+    쓴다 — 그 사실을 변형별 정규화 길이로 확인한다. 길이가 한 변형에서만
+    달라지면 그 변형이 자기 집합을 들고 있다는 뜻이다.
+    """
+    import protocol_sweep as ps
+
+    t, rot, pos = wiggly()
+    seen = []
+    real = ps.segments
+
+    def spy(p, **kw):
+        seen.append(np.array(p, dtype=float, copy=True))
+        return real(p, **kw)
+
+    ps.segments = spy
+    try:
+        raw = {}
+        d, nseg = measure(t, rot, pos, raw=raw,
+                          lengths=LENGTHS, step=STEP)
+    finally:
+        ps.segments = real
+    assert d and nseg > 0
+    assert len(raw) > 1
+
+    # 구간을 고르는 호출은 한 번뿐이고, 그 입력은 원본 위치다. 변형 자세가
+    # 여기 들어오면 그 변형은 자기 구간 집합을 들고 비교하는 것이 된다.
+    assert len(seen) == 1
+    assert np.array_equal(seen[0], np.asarray(pos, dtype=float))
+
+    # 모든 변형이 그 하나에 점수를 매긴다. 가중치는 합이 1 이다.
+    m = sweep_mask(t)
+    idx = window_segments(pos, m, LENGTHS, STEP)
+    want = np.asarray([p[2] for p in idx], dtype=float)
+    assert len(want) == nseg
+    for name, (g, gt, L) in raw.items():
+        assert len(g) == nseg, name
+        assert len(gt) == nseg, name
+        assert np.array_equal(np.asarray(L, dtype=float), want), name
+    # 가중치와 정규화 길이도 그 하나에서 나온다: w_k = 1/(N L_k).
+    w = segment_weights(idx)
+    assert len(w) == nseg
+    assert np.allclose(w, 1.0 / (nseg * want), rtol=0, atol=1e-15)
+
+
 def test_two_variants_that_differ_late_do_not_collapse_into_one_number():
     # 깎는 자리수 아래에서만 갈리는 두 변형이 같은 글자로 적히면, 되읽는
     # 쪽에서 순서가 동률이 된다. 줄 세우기가 거기서 뒤집힌다.

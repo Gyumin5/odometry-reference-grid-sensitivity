@@ -102,7 +102,8 @@ def support_names(scripts, scripts_dir=HERE):
         with open(os.path.join(scripts_dir, n + ".py")) as fh:
             text += fh.read()
     return [f for f in sorted(os.listdir(scripts_dir))
-            if not f.endswith(".py") and f in text]
+            if not f.endswith(".py") and f in text
+            and os.path.isfile(os.path.join(scripts_dir, f))]
 
 
 def result_names(scripts, scripts_dir=HERE, results_dir=RESULTS):
@@ -200,6 +201,10 @@ def main():
                      os.path.join(args.out, "results", "next", f))
     shutil.copy2(os.path.join(ROOT, "LICENSE"),
                  os.path.join(args.out, "LICENSE"))
+    # 받는 쪽은 이 나무 안에서 검사를 돌린다. 그때 생기는 바이트 묶음이
+    # 저장소로 들어가면 공개본에 이 기계의 경로가 박힌 채 실린다.
+    with open(os.path.join(args.out, ".gitignore"), "w") as f:
+        f.write("__pycache__/\n*.pyc\n")
 
     import csv as _csv
     with open(os.path.join(RESULTS, "release_bound_table.csv")) as f:

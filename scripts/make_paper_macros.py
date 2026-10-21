@@ -1263,6 +1263,12 @@ def official_boundary_macros(rows):
     out.append(("OfficialBoundaryExcessRad", at_most(excess, "%.3g")))
     out.append(("OfficialBoundaryExcessDeg",
                 at_most(excess * 180.0 / math.pi, "%.3g")))
+    # 이 사례가 불리한 까닭은 구간이 적어 반올림이 안 묻히는 것이다. 그
+    # 수를 본문이 불러 쓸 수 있게 낸다 — 안 적으면 합성 구성이 실제
+    # 시퀀스의 시간 이동 결과처럼 읽힌다.
+    seg = {int(r["segments"]) for r in rows}
+    if len(seg) == 1:
+        out.append(("OfficialBoundarySegments", str(seg.pop())))
     return out
 
 

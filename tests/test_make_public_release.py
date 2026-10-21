@@ -70,3 +70,28 @@ def test_a_sidecar_file_a_kept_script_names_comes_along(tmp_path):
 def test_the_official_comparison_keeps_its_cpp_in_the_real_tree():
     """실제 나무에서도 빠지지 않는다 — 규칙이 이 자리를 덮는지 본다."""
     assert "official_mean.cpp" in support_names(manifest())
+
+
+def test_a_directory_whose_name_a_script_mentions_is_not_a_sidecar(tmp_path):
+    """곁파일 고르는 규칙은 이름만 본다 — 디렉토리가 걸리면 복사가 터진다."""
+    s, _ = tree(tmp_path, {"core": 'IGNORE = "__pycache__/"'}, {})
+    os.mkdir(os.path.join(s, "__pycache__"))
+    assert support_names(["core"], s) == []
+
+
+def test_the_released_tree_ignores_what_running_the_tests_leaves(tmp_path):
+    """받는 쪽이 검사를 돌리면 바이트 묶음이 생긴다.
+
+    그게 저장소로 들어가면 공개본에 이 기계의 경로가 박힌 채 실린다. 실제로
+    한 번 실려서 85 개를 걷어냈다.
+    """
+    import subprocess
+    out = tmp_path / "tree"
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    env = dict(os.environ, PYTHONPATH=os.path.join(root, "src"))
+    subprocess.check_call(
+        [sys.executable, os.path.join(root, "scripts",
+                                      "make_public_release.py"),
+         "--out", str(out)], env=env, stdout=subprocess.DEVNULL)
+    ignored = (out / ".gitignore").read_text().split()
+    assert "__pycache__/" in ignored and "*.pyc" in ignored
