@@ -53,7 +53,7 @@ KNOWN = {
         "file": "<드라이브>/poses.txt, <드라이브>/oxts/timestamps.txt",
         "time_unit": "프레임 번호 + 공식 시각(나노초 문자열, 아홉 드라이브)",
         "time_source": "공식(아홉), 없음(0008·0018)",
-        "measured_axis": "프레임 격자(프레임 번호 ÷ 공개 주기 10 Hz). 공식 "
+        "measured_axis": "프레임 격자(프레임 번호 ÷ 명목 주기 10 Hz). 공식 "
                          "시각은 따로 잰 한 사례로만 쓴다",
         "terms": "published under the Creative Commons "
                  "Attribution-NonCommercial-ShareAlike 3.0 License",
