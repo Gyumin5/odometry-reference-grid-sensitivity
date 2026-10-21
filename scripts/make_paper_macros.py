@@ -284,6 +284,27 @@ def wheeled_indoor_macros(seq_rows):
     return [("RegTumRgbdWheeled", word(len(base)))]
 
 
+def crosscheck_macros(rows):
+    """공식 구간 목록과 우리 목록이 얼마나 같은지.
+
+    세는 단위를 개수에서 목록으로 올린다. 구간 수가 같아도 시작·끝이 다를
+    수 있어서 "개수가 맞았다" 는 일치의 증거로 약하다. 맞댄 것은 (시작, 끝,
+    요구길이) 세쌍이고, 배정밀도와 단정밀도를 따로 적어 어긋남이 규칙
+    차이인지 공식 누적의 반올림인지 읽는 쪽이 가를 수 있게 한다.
+    """
+    total = sum(int(r["n_segments_ours"]) for r in rows)
+    d64 = sum(int(r["differing_f64"]) for r in rows)
+    d32 = sum(int(r["differing_f32"]) for r in rows)
+    shift = max(int(r["max_end_frame_shift_f32"]) for r in rows)
+    rel = max(float(r["relative_change"]) for r in rows)
+    return [("CrossSegments", "{:,}".format(total)),
+            ("CrossDifferingF", str(d64)),
+            ("CrossDifferingSingle", str(d32)),
+            ("CrossEndShift", word(shift)),
+            # 본문이 "at most" 로 쓰는 자리라 바깥쪽으로 올린다.
+            ("CrossRelMax", at_most(rel, "%.1g"))]
+
+
 def register_count_macros(register):
     """릴리스마다 우리가 읽은 시퀀스 수.
 
@@ -1184,7 +1205,8 @@ def window_pooled_macros(rows):
     out += [("PooledWindowRelWorstRelease", LABELS[hot["release"]]),
             ("PooledWindowRelWorstRule",
              "100--800\\,m" if hot["rule"] == "seg" else "1\\,m"),
-            ("PooledWindowRelWorstPct", "%.3g" % hot_pct),
+            # 본문이 "최대" 로 쓰는 자리라 바깥쪽으로 올린다.
+            ("PooledWindowRelWorstPct", at_most(hot_pct)),
             ("PooledWindowRelWorstAxis", AXIS_WORD[hot_axis]),
             ("PooledWindowRelWorstWindow", WINDOW_WORD[hot_key]),
             # 같은 칸을 찍는 자로도 적는다. "한 칸 안" 이라고만 쓰면 0.857 이
@@ -1900,6 +1922,8 @@ def main():
                     default="results/next/rule_ratio_common.csv")
     ap.add_argument("--tumrgbd-seq",
                     default="results/next/tumrgbd_rpe1m_D.csv")
+    ap.add_argument("--crosscheck",
+                    default="results/next/kitti_official_crosscheck.csv")
     ap.add_argument("--out-dir", default="paper_tim")
     args = ap.parse_args()
 
@@ -1940,6 +1964,7 @@ def main():
                      (args.gap_load, gap_load_macros),
                      (args.rule_ratio, rule_ratio_common_macros),
                      (args.tumrgbd_seq, wheeled_indoor_macros),
+                     (args.crosscheck, crosscheck_macros),
                      (args.boundary, official_boundary_macros)):
         if os.path.exists(path):
             all_macros += fn(read_table(path))
