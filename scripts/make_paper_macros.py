@@ -310,13 +310,18 @@ def crosscheck_macros(rows):
     수 있어서 "개수가 맞았다" 는 일치의 증거로 약하다. 맞댄 것은 (시작, 끝,
     요구길이) 세쌍이고, 배정밀도와 단정밀도를 따로 적어 어긋남이 규칙
     차이인지 공식 누적의 반올림인지 읽는 쪽이 가를 수 있게 한다.
+
+    시퀀스 수도 이 표에서 낸다. 본문이 그 수를 이 대조의 범위로 적는데,
+    공식 이진파일 탐침 표에서 세면(\\OfficialSequences) 두 표의 시퀀스 집합이
+    갈리는 순간 문장만 조용히 틀린다. 지금은 둘 다 열하나다.
     """
     total = sum(int(r["n_segments_ours"]) for r in rows)
     d64 = sum(int(r["differing_f64"]) for r in rows)
     d32 = sum(int(r["differing_f32"]) for r in rows)
     shift = max(int(r["max_end_frame_shift_f32"]) for r in rows)
     rel = max(float(r["relative_change"]) for r in rows)
-    return [("CrossSegments", "{:,}".format(total)),
+    return [("CrossSequences", str(len(rows))),
+            ("CrossSegments", "{:,}".format(total)),
             ("CrossDifferingF", str(d64)),
             ("CrossDifferingSingle", str(d32)),
             ("CrossEndShift", word(shift)),
