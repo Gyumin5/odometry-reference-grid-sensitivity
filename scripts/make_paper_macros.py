@@ -1477,7 +1477,10 @@ def official_boundary_macros(rows):
 
 
 def time_gap_macros(rows):
-    """같은 공백 규칙을 아홉 릴리스에 씌웠을 때 무엇이 걸리나."""
+    """같은 공백 규칙을 열 릴리스에 씌웠을 때 무엇이 걸리나.
+
+    릴리스 수는 자료에서 세어 \\GapReleases 로 낸다 — 설명에 적힌 수가 아니다.
+    """
     hit = {}
     for r in rows:
         g = int(r["gaps"])
