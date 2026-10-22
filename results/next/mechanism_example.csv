@@ -1,0 +1,2 @@
+sequence,tau_ms,segment_length_m,n_segments,shown_start_frame,shown_end_frame,shown_diff_m,median_diff_m,min_diff_m,shown_null_len_m,shown_off_len_m,shown_rot_part_m,shown_end_part_m,shown_start_shift_m,shown_end_shift_m,shown_start_turn_deg
+00,25.0,100.0,444,3680,3790,1.8372521778877653,0.3031885505393991,0.014570982308049426,99.65224233422069,99.83790984376967,1.8973576359849287,0.19899977327659613,0.1267885359409457,0.2833925711344906,1.091257866210917

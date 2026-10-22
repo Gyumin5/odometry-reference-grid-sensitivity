@@ -981,6 +981,39 @@ def floor_macros(rows):
     return out
 
 
+def mechanism_macros(rows):
+    """그림이 보이는 구간 하나의 (이름, 값) 들.
+
+    그림 설명문이 부르는 수다. 그림 자신은 수를 글자로 안 박으므로, 측정을
+    다시 돌리면 그림과 설명문이 같이 따라간다.
+
+    보이는 구간은 그 시퀀스에서 차이가 가장 큰 것이다. 중앙값과 최소값을 같이
+    내보낸다 — 가장 큰 것 하나만 적으면 읽는 쪽이 그 값을 묶음의 크기로 읽는다.
+    길이는 맨 반올림으로 적는다. 상한이 아니라 그 구간에서 실제로 잰 양이라
+    바깥으로 깎을 자리가 아니다.
+    """
+    r = rows[0]
+    length = float(r["segment_length_m"])
+    diff = float(r["shown_diff_m"])
+    return [("MechSeq", r["sequence"]),
+            ("MechTau", "%g" % float(r["tau_ms"])),
+            ("MechSegLen", "%g" % length),
+            ("MechSegments", r["n_segments"]),
+            ("MechDiff", "%.3g" % diff),
+            # 같은 구간에서 그 차이가 길이의 몇 퍼센트인가. 공식 병진오차가
+            # 구간 길이로 나눈 값을 쓰므로 그 단위로도 적는다.
+            ("MechDiffPct", "%.3g" % (100.0 * diff / length)),
+            ("MechMedianDiff", "%.3g" % float(r["median_diff_m"])),
+            # 묶음의 아래쪽 끝이다. 본문이 "가장 작은" 으로 부르므로 다른
+            # 범위 끝과 같이 바깥으로, 곧 아래로 깎는다.
+            ("MechMinDiff", at_least(float(r["min_diff_m"]), "%.2g")),
+            ("MechRotPart", "%.3g" % float(r["shown_rot_part_m"])),
+            ("MechEndPart", "%.3g" % float(r["shown_end_part_m"])),
+            ("MechStartShift", "%.3g" % float(r["shown_start_shift_m"])),
+            ("MechEndShift", "%.3g" % float(r["shown_end_shift_m"])),
+            ("MechStartTurn", "%.3g" % float(r["shown_start_turn_deg"]))]
+
+
 def known_macros(rows):
     """답을 아는 궤적 점검의 (이름, 값) 들.
 
@@ -2068,6 +2101,8 @@ def main():
                     default="results/next/metric_axioms_probe.csv")
     ap.add_argument("--known",
                     default="results/next/known_answer_probe.csv")
+    ap.add_argument("--mechanism",
+                    default="results/next/mechanism_example.csv")
     ap.add_argument("--rank", default="results/next/kitti_rank_check.csv")
     ap.add_argument("--bound-check",
                     default="results/next/resample_bound_check.csv")
@@ -2116,6 +2151,7 @@ def main():
                      (args.method_scale, method_scale_macros),
                      (args.axioms, axiom_macros),
                      (args.known, known_macros),
+                     (args.mechanism, mechanism_macros),
                      (args.rank, retrieval_macros),
                      (args.bound_check, bound_check_macros),
                      (args.window_counts, window_counts_macros),
