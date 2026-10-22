@@ -176,10 +176,10 @@ def pooled_bias(release, lengths, step, eps):
 
 
 def bias_all_rows(args):
-    """일곱 릴리스 전부에서 창이 점수를 어디로 옮기나.
+    """열 릴리스 전부에서 창이 점수를 어디로 옮기나.
 
-    키티는 공식 프로그램이 같은 양을 찍어 주지만 나머지 여섯에는 그런 구현이
-    없다. 그래서 공식과 같은 꼴을 배정밀도로 직접 계산해 열세 줄을 채운다.
+    키티는 공식 프로그램이 같은 양을 찍어 주지만 나머지 아홉에는 그런 구현이
+    없다. 그래서 공식과 같은 꼴을 배정밀도로 직접 계산해 열아홉 줄을 채운다.
     공식 출력과의 대조는 키티 한 줄에서 따로 한다 — 그 줄이 이 계산이 공식과
     같은 양을 내는지 보증하는 자리다.
     """
@@ -310,7 +310,7 @@ def main():
                     default="00,01,02,03,04,05,06,07,08,09,10")
     ap.add_argument("--eps", default="1.2e-05,1.6e-05,2.0e-05")
     ap.add_argument("--pooled-eps", default="1.6e-05",
-                    help="일곱 릴리스 묶음 측정에 쓰는 프레임당 각")
+                    help="열 릴리스 묶음 측정에 쓰는 프레임당 각")
     ap.add_argument("--out-counts",
                     default="results/next/window_exclusion_counts.csv")
     ap.add_argument("--out-bias",
@@ -335,7 +335,7 @@ def main():
             if r["rot_%s_over_display" % k]
             and (float(r["rot_%s_over_display" % k]) > 1.0
                  or float(r["trans_%s_over_display" % k]) > 1.0)]
-    print("일곱 릴리스 묶음: 두 창 중 한 쪽이라도 한 칸보다 크게 옮긴 줄 %d / %d."
+    print("열 릴리스 묶음: 두 창 중 한 쪽이라도 한 칸보다 크게 옮긴 줄 %d / %d."
           % (len(set(id(r) for r in over)), len(pooled)))
 
 
